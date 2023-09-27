@@ -1,0 +1,14 @@
+// White Theme
+&.font-white {
+    @include theme-white();
+}
+
+// Basic Theme
+&.font-basic {
+    @include theme-basic();
+}
+
+// Black Theme
+&.font-black {
+    @include theme-black();
+}

@@ -1,0 +1,41 @@
+/* ------ Colors ------- */
+//$navy: #162236;
+$red: #9e0300;
+$dark_purple: #3C0035;
+$navy: #1b1d32;
+$turq: #005973;
+$bright-blue: #00ABED;
+//#0090e4
+$lt-blue: #3E6990;
+$off-white: #D8D5DB;
+//#f8f8f8
+$dk-gray: #313030;
+
+
+// New colors
+// Light Blue: #4de4db
+// Red: #f6647d
+// Yellow: #fcea4d
+
+/* ------ Fonts -------- */
+$display: 'Bad Script', cursive;
+$font_one: 'Lora', Georgia, 'Times New Roman', serif;
+$font_two: 'Dosis', Arial, Helvetica, sans-serif;
+
+// Lora
+@mixin font_style_two($size: 14px, $weight: 400, $family: $lora) {
+    font-size: $size;
+    font-weight: $weight;
+    font-family: $family;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+// Dosis Regular
+@mixin font_style_three($size: 14px, $weight: 400, $family: $dosis) {
+    font-size: $size;
+    font-weight: $weight;
+    font-family: $family;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}

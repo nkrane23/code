@@ -1,0 +1,111 @@
+//@import "builder/columns";
+
+// Section Styles
+.builder-section {
+    background-size: cover;
+    background-repeat: no-repeat;
+    @import "builder/spacing/padding";
+
+    /*&:first-of-type {
+        background: rgb(0,171,237);
+        background: linear-gradient(180deg, rgba(0,171,237,1) 0%, rgba(248,248,248,1) 70%);
+        height: 100vh;
+
+        .builder-component-title h1.col-title, h2.col-title {
+            color: #000 !important;
+            font-size: 300% !important;
+        }
+
+        .scroll-blink {
+            text-align: center;
+            margin-top: 35px;
+            -webkit-animation: fadeinout 3s ease-in-out infinite;
+            animation: fadeinout 3s ease-in-out infinite;
+            opacity: 0.35;
+
+            i {
+                cursor: pointer;
+                transform: scale(1);
+                transition: .35s all;
+                font-size: 55px;
+                color: #000;
+
+                &:hover {
+                    transform: scale(1.2);
+                    opacity: 1;
+                    animation: none;
+                }
+            }
+        }
+
+        @-webkit-keyframes fadeinout {
+            50% { opacity: 1; }
+        }
+
+        @keyframes fadeinout {
+            50% { opacity: 1; }
+        }
+    }*/
+
+    &.inactive {
+        display: none;
+    }
+
+    &.repeated {
+        background-repeat: repeat;
+        background-size: initial !important;
+    }
+
+    &.builder-col-align {
+        &-top .builder-layout .row {
+
+        }
+
+        &-middle .builder-layout .row  {
+
+        }
+
+        &-bottom .builder-layout .row {
+            align-items: flex-end;
+        }
+    }
+
+    .builder-layout {
+        &.layout-not-found .message h2 {
+            color: #000;
+        }
+
+        .builder-col {
+            .builder-component {
+                padding-bottom: 1em;
+            }
+
+            &:last-of-type {
+                .builder-component:last-of-type {
+                    padding-bottom: 0;
+                }
+            }
+        }
+
+        //------- Components -------
+        @import "builder/components/title";
+        @import "builder/components/wysiwyg";
+        @import "builder/components/html";
+        @import "builder/components/button";
+        @import "builder/components/image";
+        @import "builder/components/horizontal-buttons";
+        @import "builder/components/accordion";
+        @import "builder/components/gallery-slider";
+
+        //------- Layouts -------
+        @import "builder/layouts/banner-card";
+        @import "builder/layouts/hover-gallery";
+        @import "builder/layouts/packery-gallery";
+        @import "builder/layouts/parallax";
+        @import "builder/layouts/icons-row";
+        @import "builder/layouts/slider";
+        @import "builder/layouts/accordion";
+    }
+
+    @import "builder/theme/themes";
+}

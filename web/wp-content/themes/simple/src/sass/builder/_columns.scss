@@ -1,0 +1,109 @@
+@mixin responsive-column-padding($reversed: false) {
+    padding: 1em 0;
+
+    @if $reversed {
+        &:first-child {
+            padding-bottom: 0;
+        }
+
+        &:last-child {
+            padding-top: 0;
+        }
+    } @else {
+        &:first-child {
+            padding-top: 0;
+        }
+
+        &:last-child {
+            padding-bottom: 0;
+        }
+    }
+}
+
+.u-container-width {
+    padding: 0 15px;
+    margin: auto;
+    max-width: 100%;
+    width: 1200px;
+    position: relative;
+    @include grid-container;
+}
+
+.builder-row {
+    display: flex;
+    flex-flow: row wrap;
+    width: 100%;
+    align-items: flex-start;
+}
+
+.builder-column {
+    flex: 1 1 auto;
+    width: 100%;
+}
+
+.builder-layout {
+    &-one-column {
+        .builder-column {
+            //width: 100%;
+            @include grid-column(12);
+        }
+    }
+
+    &-two-column {
+        .builder-column {
+            @include grid-column(6);
+
+            @media screen and (max-width: 575px) {
+                @include grid-column(12);
+                @include responsive-column-padding;
+            }
+        }
+    }
+
+    &-three-column {
+        .builder-column {
+            @include grid-column(4);
+
+            @media screen and (max-width: 800px) {
+                @include grid-column(12);
+                @include responsive-column-padding;
+            }
+        }
+    }
+
+    &-four-column {
+        .builder-column {
+            @include grid-column(3);
+
+            @media screen and (max-width: 900px) {
+                @include grid-column(6);
+                @include responsive-column-padding;
+            }
+
+            @media screen and (max-width: 575px) {
+                @include grid-column(12);
+                @include responsive-column-padding;
+            }
+        }
+    }
+
+    &-one-third-column {
+        .builder-column:first-of-type {
+            @include grid-column(4);
+        }
+
+        .builder-column:last-of-type {
+            @include grid-column(8);
+        }
+    }
+
+    &-two-thirds-column {
+        .builder-column:first-of-type {
+            @include grid-column(8);
+        }
+
+        .builder-column:last-of-type {
+            @include grid-column(4);
+        }
+    }
+}

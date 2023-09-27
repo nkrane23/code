@@ -1,0 +1,49 @@
+.builder-component-horizontal-buttons {
+    .buttons-row {
+        display: flex;
+        flex-flow: row wrap;
+
+        &.align-start {
+            justify-content: flex-start;
+        }
+
+        &.align-center {
+            justify-content: center;
+        }
+
+        &.align-end {
+            justify-content: flex-end;
+        }
+
+        &.align-space-around {
+            justify-content: space-around;
+        }
+
+        &.align-space-between {
+            justify-content: space-between;
+        }
+
+        .single-button {
+            text-align: center;
+            margin: 0 20px 20px 0;
+
+            a {
+                background: $bright-blue;
+                border-radius: 4px;
+                text-decoration: none;
+                font-family: $font_one;
+                padding: 8px 30px;
+                display: inline-block;
+                text-transform: uppercase;
+                color: #fff;
+                font-size: 100%;
+                font-weight: 600;
+                transition: all, 0.3s;
+
+                &:hover {
+                    background: $lt-blue;
+                }
+            }
+        }
+    }
+}

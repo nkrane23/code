@@ -1,0 +1,54 @@
+# Existing #
+/desktop.ini
+/.htaccess
+/.git/
+web/wp-config.php
+.externalToolBuilders
+/.idea/
+error_log
+*.ftpquota
+/web/wp-content/cache/
+wp-config.php
+web/wp-content/w3tc-config/
+/nbproject/private/
+.htaccess
+/node_modules/
+web/wp-content/themes/simple/node_modules
+web/wp-content/themes/simple/package-lock.json
+web/wp-content/themes/simple/animation-class-list.php
+robots.txt
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+ 
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+/gulpfile.js
+
+# WordPress #
+######################
+.htaccess
+sitemap.xml
+sitemap.xml.gz
+wp-content/advanced-cache.php
+wp-content/backup-db/
+wp-content/backups/
+wp-content/blogs.dir/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/uploads/
+wp-content/wp-cache-config.php
+/nbproject/private/
+/nbproject/
+.idea/

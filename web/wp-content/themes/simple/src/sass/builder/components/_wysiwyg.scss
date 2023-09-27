@@ -1,0 +1,96 @@
+.builder-component-wysiwyg {
+    @include main-fonts();
+
+    iframe {
+        max-width: 100%;
+    }
+
+    ul {
+        padding-left: 40px;
+    }
+
+    .contact-form {
+        .nf-before-form-content {
+            display: none;
+        }
+
+        .nf-after-form-content {
+            text-align: center;
+        }
+
+        .nf-field-container {
+            max-width: 60%;
+            margin: 0 auto 25px auto;
+
+            @media screen and (max-width: 767px) {
+                max-width: 90%;
+            }
+
+            .nf-field-label label {
+                font-family: $font_two;
+                font-weight: 300;
+                font-size: 18px;
+                letter-spacing: 1px;
+            }
+
+            .nf-field-element input[type="text"],
+            input[type="email"], input[type="tel"] {
+                padding: 7px 15px;
+            }
+
+            .submit-wrap input[type="submit"] {
+                color: #ffffff;
+                font-family: $font_two;
+                letter-spacing: 1px;
+                padding: 8px 25px;
+                font-size: 18px;
+                text-transform: uppercase;
+                background: $navy;
+                border: none;
+                cursor: pointer;
+                transition: all 0.5s;
+
+                &:hover {
+                    transform: scale(1.1);
+                }
+            }
+        }
+    }
+
+    ul.special {
+        border-left: 4px solid $lt-blue;
+        padding-left: 30px;
+
+        li {
+            margin-bottom: 0;
+            font-size: 16px;
+        }
+    }
+
+    pre {
+        position: relative;
+        word-wrap: normal;
+        overflow: initial;
+        white-space: normal;
+        word-break: break-all;
+        border: none;
+        font-family: $font_two;
+        font-size: 21px;
+        box-shadow: 3px 1px 11px 0px rgba(0,0,0,0.35);
+        padding: 10px;
+        margin: 25px 0;
+        text-align: center;
+        background: #fff;
+
+        &:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: $dark_purple;
+            display: block;
+        }
+    }
+}

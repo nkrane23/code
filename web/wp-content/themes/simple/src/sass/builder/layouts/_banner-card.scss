@@ -1,0 +1,117 @@
+&-banner-card {
+    .card-wrap {
+        position: relative;
+        margin: 0 25px;
+        box-shadow: 6px 6px 42px 0px rgba(0,0,0,0.75);
+        animation-duration: 1.3s;
+
+        .background-image {
+            position: absolute;
+            z-index: -1;
+            width: 100%;
+            height: 100%;
+
+            .the-progressive-image {
+                height: 100%;
+                background-repeat: no-repeat;
+                background-size: cover;
+                background-position: 0 25%;
+            }
+        }
+
+        @media screen and (max-width: 1200px) {
+            margin: 0 30px;
+        }
+
+        @media screen and (max-width: 600px) {
+            background-position: top center;
+            margin: 0 15px;
+            min-height: 300px;
+        }
+
+        @media screen and (max-width: 400px) {
+            margin: 0;
+        }
+
+        .flexed-row {
+            display: flex;
+            flex-flow: row wrap;
+            justify-content: flex-end;
+
+            .right-half {
+                background-color: rgba(0, 0, 0, 0.7);
+                flex: 0 1 55%;
+                overflow: hidden;
+                min-height: 425px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                @media screen and (max-width: 1200px) {
+                    min-height: 300px;
+                }
+
+                @media screen and (max-width: 991px) {
+                    flex: 100%;
+                    width: 100%;
+                }
+
+                @media screen and (max-width: 600px) {
+                    min-height: 170px;
+                }
+
+                @media screen and (max-width: 400px) {
+                    min-height: 150px;
+                }
+            }
+        }
+
+        .title-wrap {
+            text-align: center;
+            padding: 0 20px;
+
+            h2 {
+                font-family: $font_one;
+                color: #ffffff;
+                animation-delay: 1.8s;
+                animation-duration: 0.8s;
+                margin-bottom: 15px;
+
+                @media screen and (max-width: 767px) {
+                    font-size: 24px;
+                    margin-top: 15px;
+                }
+
+                @media screen and (max-width: 400px) {
+                    font-size: 20px;
+                }
+            }
+
+            .animated-lines h4 {
+                font-family: $font_two;
+                margin-bottom: 15px;
+                color: #ffffff;
+                animation-delay: 3.3s;
+                animation-duration: 0.7s;
+
+                @media screen and (max-width: 767px) {
+                    font-size: 18px;
+                }
+
+                @media screen and (max-width: 400px) {
+                    font-size: 16px;
+                }
+
+                &:nth-child(2) {
+                    animation-delay: 4.3s;
+                    animation-duration: 0.7s;
+                }
+
+                &:nth-child(3) {
+                    animation-delay: 5.3s;
+                    animation-duration: 0.7s;
+                }
+            }
+        }
+    }
+}

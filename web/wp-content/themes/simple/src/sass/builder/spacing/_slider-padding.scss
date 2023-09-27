@@ -1,0 +1,89 @@
+// Variables -----------------
+$none: 0;
+$low: 1%;
+$med: 2%;
+$high: 4%;
+$huge: 8%;
+
+// Mobile Padding ~600px and under
+$mobile-xl-low: 8%;
+$mobile-low: 10%;
+$mobile-med: 12%;
+$mobile-high: 14%;
+$mobile-huge: 16%;
+
+&.slide-padding-top {
+    &-none {
+        padding-top: $none;
+    }
+
+    &-low {
+        padding-top: $low;
+
+        @media screen and (max-width: 600px) {
+            padding-top: $mobile-low;
+        }
+    }
+
+    &-med {
+        padding-top: $med;
+
+        @media screen and (max-width: 600px) {
+            padding-top: $mobile-med;
+        }
+    }
+
+    &-lots {
+        padding-top: $high;
+
+        @media screen and (max-width: 600px) {
+            padding-top: $mobile-high;
+        }
+    }
+
+    &-huge {
+        padding-top: $huge;
+
+        @media screen and (max-width: 600px) {
+            padding-top: $mobile-huge;
+        }
+    }
+}
+
+&.slide-padding-bottom {
+    &-none {
+        padding-bottom: $none;
+    }
+
+    &-low {
+        padding-bottom: $low;
+
+        @media screen and (max-width: 600px) {
+            padding-bottom: $mobile-low;
+        }
+    }
+
+    &-med {
+        padding-bottom: $med;
+
+        @media screen and (max-width: 600px) {
+            padding-bottom: $mobile-med;
+        }
+    }
+
+    &-lots {
+        padding-bottom: $high;
+
+        @media screen and (max-width: 600px) {
+            padding-bottom: $mobile-high;
+        }
+    }
+
+    &-huge {
+        padding-bottom: $huge;
+
+        @media screen and (max-width: 600px) {
+            padding-bottom: $mobile-huge;
+        }
+    }
+}

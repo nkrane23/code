@@ -1,0 +1,189 @@
+.temp-hide {
+    display: none !important;
+}
+
+html {
+    overflow-x: hidden;
+}
+
+body {
+    overflow-x: hidden;
+    background-color: #f8f8f8;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+
+    .site-wrapper {
+        position: relative;
+
+        #skip-to-content {
+            position: absolute;
+            left: -999px;
+            width: 1px;
+            height: 1px;
+            font-family: $font_one;
+
+            &:focus, &:active {
+                height: auto;
+                width: auto;
+                left: 250px;
+                right: 0;
+                background: #f6f3f3;
+                font-size: 1.2em;
+                color: #333;
+                display: block;
+                position: absolute;
+                text-align: center;
+                border: 2px dashed #000;
+
+                @media screen and (max-width: 991px) {
+                    top: 70px;
+                    left: 0;
+                }
+            }
+        }
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .u-container-width {
+        padding: 0 15px;
+        margin: auto;
+        max-width: 100%;
+        width: 1200px;
+        position: relative;
+    }
+
+    .no-padding {
+        padding: 0;
+    }
+
+    .content-area {
+        margin-left: 250px;
+
+        @media screen and (max-width: 991px) {
+            margin-left: 0;
+        }
+
+        .overlay-dark {
+            .container-fluid {
+                max-width: 400px;
+                margin: auto;
+                background: rgba(0, 0, 0, 0.55);
+                padding: 35px 25px;
+            }
+
+            .blink-arrows {
+                text-align: center;
+                -webkit-animation: fadeinout 3s ease-in-out infinite;
+                animation: fadeinout 3s ease-in-out infinite;
+                opacity: 0.35;
+
+                i {
+                    cursor: pointer;
+                    transform: scale(1);
+                    transition: .35s all;
+                    font-size: 55px;
+                    color: #fff;
+
+                    &:hover {
+                        transform: scale(1.2);
+                        opacity: 1;
+                        animation: none;
+                    }
+                }
+            }
+
+            @-webkit-keyframes fadeinout {
+                50% { opacity: 1; }
+            }
+
+            @keyframes fadeinout {
+                50% { opacity: 1; }
+            }
+        }
+    }
+
+    &.error404 {
+        .content-area {
+            height: 80vh;
+            background: #ebebeb;
+
+            .error-404 {
+                text-align: center;
+                padding-top: 100px;
+
+                .wrap {
+                    padding: 0 15px;
+                }
+
+                h2 {
+                    font-family: $font_two;
+                    font-weight: 500;
+                    color: #000;
+                }
+
+                p {
+                    font-family: $font_one;
+                }
+
+                form input {
+                    background: $bright-blue;
+                    color: #fff;
+                    padding: 8px 30px;
+                    margin-top: 20px;
+                    display: inline-block;
+                    border-radius: 4px;
+                    text-transform: uppercase;
+                    border: none;
+                    cursor: pointer;
+                    font-family: $font_one;
+                    font-size: 110%;
+                    font-weight: 500;
+                }
+            }
+        }
+    }
+
+    &.logged-in {
+        header.sticky {
+            ///top: 32px;
+        }
+    }
+
+    .img-respond {
+        max-width: 100%;
+        display: block;
+    }
+
+    @media screen and (max-width: 991px) {
+        .img-respond {
+            margin-left: auto;
+            margin-right: auto;
+        }
+    }
+}
+
+nav.mobile-nav {
+    display: none;
+}
+
+.featherlight-content {
+    width: 1000px;
+    max-width: 100%;
+    padding: 0 !important;
+    border-bottom: 0 !important;
+
+    @media screen and (max-width: 991px) {
+        max-width: 90%;
+    }
+
+    @media screen and (max-width: 400px) {
+    }
+
+    .featherlight-close-icon {
+        background: transparent;
+    }
+}

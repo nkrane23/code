@@ -1,0 +1,106 @@
+&-packery-gallery {
+    .gutter-sizer {
+        //width: 1%;
+        width: 0;
+
+        @media screen and (max-width: 768px) {
+            width: 0;
+        }
+    }
+
+    .col-title {
+        font-family: $display;
+    }
+
+    .packery-item {
+        //width: 32.66666%;
+        width: 33.33333333%;
+
+        @media screen and (max-width: 768px) {
+            width: 100%;
+            margin-bottom: 2%;
+            text-align: center;
+            
+            &:last-of-type {
+                margin-bottom: 0;
+            }
+        }
+
+        .image-wrap {
+            transform: perspective(1px) translateZ(0);
+            transition-duration: 0.4s;
+            transition-property: transform;
+
+            .image-area {
+                padding-top: 100%;
+                padding-left: 32%;
+                background-size: cover;
+                background-repeat: no-repeat;
+            }
+        }
+
+        .overlay {
+            display: none;
+
+            .inner-wrap .line {
+                background: #fff;
+                width: 60%;
+                height: 1px;
+                visibility: hidden;
+                transform: scaleX(0);
+                transition: 0.35s ease-in-out;
+                margin: 15px auto;
+            }
+        }
+
+        &:hover {
+            .image-wrap {
+                transform: scale(0.9);
+            }
+
+            .overlay {
+                display: block;
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: rgba(0, 0, 0, 0.65);
+                //background-color: rgba(0, 0, 0, 0.35);
+
+                .inner-wrap {
+                    text-align: center;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    height: 100%;
+
+                    .line {
+                        visibility: visible;
+                        transform: scaleX(1);
+                    }
+
+                    h3 {
+                        color: #ffffff;
+                        font-family: $font_one;
+                        animation-duration: 0.8s;
+                        margin: 0;
+                    }
+
+                    h4 {
+                        color: #ffffff;
+                        margin-top: 0;
+                        font-family: $font_two;
+                        animation-duration: 0.8s;
+                    }
+                }
+            }
+        }
+
+        &:last-of-type {
+            .image-wrap .image-area {
+                background-position: right;
+            }
+        }
+    }
+}

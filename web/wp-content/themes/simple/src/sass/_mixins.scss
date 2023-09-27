@@ -1,0 +1,181 @@
+@mixin fa() {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 700;
+}
+
+@mixin theme-white() {
+    h1, h2, h3, h4, h5, h6,
+    p, ol li, ul li {
+        color: #fff;
+
+        a {
+            color: #fff;
+            text-decoration: none;
+        }
+    }
+
+    h1, h2 {
+        &:after {
+            //background: rgba(255, 1, 44, 0.6);
+            background-color: rgba(255, 228, 0, 0.69);
+        }
+    }
+}
+
+@mixin theme-basic() {
+    h1, h2 {
+        color: $lt-blue;
+
+        a {
+            text-decoration: none;
+            color: $lt-blue;
+        }
+
+        :after {
+            background: $dark_purple;
+        }
+    }
+
+    h3, h4, h5, h6, p, ol li,
+    ul li {
+        color: $navy;
+
+        a {
+            text-decoration: none;
+            color: $navy;
+        }
+    }
+}
+
+@mixin theme-black() {
+    h1, h2, h3, h4, h5, h6,
+    p, ol li, ul li {
+        color: #000;
+
+        a {
+            color: #000;
+            text-decoration: none;
+        }
+    }
+
+    h1, h2 {
+        &:after {
+            background: $dark_purple;
+        }
+    }
+}
+
+@mixin main-fonts() {
+    h1 {
+        font-family: $display;
+        //margin-bottom: 0;
+        margin-bottom: 15px;
+        font-weight: 300;
+        font-size: 250%;
+
+        @media screen and (max-width: 991px) {
+            font-size: 200%;
+        }
+
+        strong {
+            font-weight: 700;
+        }
+    }
+
+    h2 {
+        font-family: $font_two;
+        //margin-bottom: 10px;
+        margin-bottom: 15px;
+        font-size: 200%;
+
+        @media screen and (max-width: 991px) {
+            font-size: 150%;
+        }
+
+        @media screen and (max-width: 500px) {
+            font-size: 125%;
+        }
+
+        strong {
+            font-weight: 700;
+        }
+    }
+
+    h3 {
+        font-family: $font_two;
+        //margin-bottom: 20px;
+        margin-bottom: 15px;
+        font-size: 175%;
+
+        @media screen and (max-width: 500px) {
+            font-size: 125%;
+        }
+
+        strong {
+            font-weight: 700;
+        }
+    }
+
+    h4 {
+        font-family: $font_two;
+        font-weight: 400;
+        font-size: 150%;
+        margin-bottom: 15px;
+
+        strong {
+            font-weight: 700;
+        }
+
+        a {
+            color: $lt-blue;
+        }
+    }
+
+    h5 {
+        font-family: $font_two;
+        font-size: 140%;
+        font-weight: 300;
+        margin-bottom: 15px;
+
+        strong {
+            font-weight: 500;
+        }
+
+        a {
+            color: $lt-blue;
+        }
+    }
+
+    h6 {
+        font-family: $font_one;
+        //margin-bottom: 15px;
+        margin-bottom: 10px;
+        color: $lt-blue;
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 1px;
+
+        strong {
+            font-weight: 900;
+        }
+
+        a {
+            color: $lt-blue;
+        }
+    }
+
+    p, ul li, ol li {
+        font-family: $font_one;
+        font-size: 16px;
+        margin-bottom: 10px;
+        font-weight: 300;
+
+        strong {
+            font-weight: 700;
+        }
+
+        a {
+            color: $lt-blue;
+        }
+    }
+}

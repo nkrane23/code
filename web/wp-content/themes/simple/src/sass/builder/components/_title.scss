@@ -1,0 +1,78 @@
+.builder-component-title {
+    .col-title {
+        margin-bottom: 0;
+    }
+
+    h1.col-title {
+        font-family: $display;
+        font-weight: 300;
+        font-size: 250%;
+        position: relative;
+        display: inline-block;
+
+        &:after {
+            content: "";
+            width: 100%;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 2px;
+        }
+
+        @media screen and (max-width: 767px) {
+            font-size: 200%;
+        }
+    }
+
+    h2.col-title {
+        font-family: $display;
+        font-weight: 300;
+        font-size: 200%;
+        position: relative;
+        display: inline-block;
+
+        &:after {
+            content: "";
+            width: 100%;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 2px;
+        }
+
+        @media screen and (max-width: 767px) {
+            font-size: 175%;
+        }
+    }
+
+    h3.col-title {
+        font-family: $font_one;
+        font-weight: 500;
+        font-size: 150%;
+
+        @media screen and (max-width: 500px) {
+            font-size: 125%;
+        }
+    }
+
+    h4.col-title {
+        font-family: $display;
+        //margin-bottom: 15px;
+        color: #fff;
+        font-weight: 500;
+    }
+
+    h5.col-title {
+        font-family: $font_one;
+        margin-bottom: 15px;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    &.overlay-dark {
+        max-width: 400px;
+        margin: auto;
+        background: rgba(0,0,0, 0.55);
+        padding: 35px 25px;
+    }
+}

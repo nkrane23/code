@@ -1,0 +1,175 @@
+//
+// Section Padding -----------------
+
+// Variables -----------------
+$none: 0;
+$low: 1%;
+$med: 2%;
+$high: 4%;
+$huge: 8%;
+
+// Mobile Padding ~600px and under
+$mobile-low: 4%;
+$mobile-med: 6%;
+$mobile-high: 8%;
+$mobile-huge: 10%;
+
+&.builder-section {
+    // Top Padding Options
+    &-padding-top-none {
+        padding-top: $none;
+    }
+
+    &-padding-top-low {
+        padding-top: $low;
+
+        @media screen and (max-width: 991px) {
+            padding-top: $med;
+        }
+
+        @media screen and (max-width: 600px) {
+            padding-top: $mobile-low;
+        }
+    }
+
+    &-padding-top-med {
+        padding-top: $med;
+
+        @media screen and (max-width: 991px) {
+            padding-top: $high;
+        }
+
+        @media screen and (max-width: 600px) {
+            padding-top: $mobile-med;
+        }
+    }
+
+    &-padding-top-high {
+        padding-top: $high;
+
+        @media screen and (max-width: 600px) {
+            padding-top: $mobile-high;
+        }
+    }
+
+    &-padding-top-huge {
+        padding-top: $huge;
+
+        @media screen and (max-width: 600px) {
+            padding-top: $mobile-huge;
+        }
+    }
+
+    // Bottom Padding Options
+    &-padding-bottom-none {
+        padding-bottom: $none;
+    }
+
+    &-padding-bottom-low {
+        padding-bottom: $low;
+
+        @media screen and (max-width: 991px) {
+            padding-bottom: $med;
+        }
+
+        @media screen and (max-width: 600px) {
+            padding-bottom: $mobile-low;
+        }
+    }
+
+    &-padding-bottom-med {
+        padding-bottom: $med;
+
+        @media screen and (max-width: 991px) {
+            padding-bottom: $high;
+        }
+
+        @media screen and (max-width: 600px) {
+            padding-bottom: $mobile-med;
+        }
+    }
+
+    &-padding-bottom-high {
+        padding-bottom: $high;
+
+        @media screen and (max-width: 600px) {
+            padding-bottom: $mobile-high;
+        }
+    }
+
+    &-padding-bottom-huge {
+        padding-bottom: $huge;
+
+        @media screen and (max-width: 600px) {
+            padding-bottom: $mobile-huge;
+        }
+    }
+
+    //
+    //.section padding -----------------
+
+    //
+    // Layout Padding -----------------
+    .builder-layout {
+        &:first-of-type {
+            margin-top: 0 !important;
+        }
+
+        &.spacer {
+            margin-bottom: 0 !important;
+        }
+    }
+
+    &.builder-layout {
+        &-padding-none {
+            .builder-layout {
+                margin-top: $none;
+                margin-bottom: $none;
+            }
+        }
+
+        &-padding-low {
+            .builder-layout {
+                margin-top: $low;
+                margin-bottom: $low;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+        }
+
+        &-padding-med {
+            .builder-layout {
+                margin-top: $med;
+                margin-bottom: $med;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+        }
+
+        &-padding-high {
+            .builder-layout {
+                margin-top: $high;
+                margin-bottom: $high;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+        }
+
+        &-padding-huge {
+            .builder-layout {
+                margin-top: $huge;
+                margin-bottom: $huge;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,60 @@
+footer {
+    background-color: $dk-gray;
+    margin-left: 230px;
+    text-align: center;
+    padding: 0px 15px;
+
+    @media screen and (max-width: 991px) {
+        padding: 15px;
+        margin-left: 0;
+    }
+
+    .to-top {
+        display: none;
+
+        @media screen and (max-width: 991px) {
+            display: block;
+            position: fixed;
+            right: 15px;
+            bottom: 15px;
+            color: #000000;
+            opacity: 0.75;
+            text-decoration: none;
+
+            i {
+                font-size: 30px;
+            }
+        }
+
+        @media screen and (max-width: 400px) {
+            display: none;
+        }
+    }
+
+    .disclaimer {
+        color: #fff;
+        font-family: $font_two;
+        font-size: 14px;
+        padding: 15px;
+    }
+
+    .social-icons {
+        display: none;
+
+        @media screen and (max-width: 991px) {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+
+            i {
+                color: #ffffff;
+                margin-left: 15px;
+                font-size: 28px;
+            }
+
+            .fa-file-pdf-o {
+                font-size: 26px;
+            }
+        }
+    }
+}
