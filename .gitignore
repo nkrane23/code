@@ -51,3 +51,6 @@ wp-content/wp-cache-config.php
 /nbproject/private/
 /nbproject/
 .idea/
+
+.php-ini
+.php-version
