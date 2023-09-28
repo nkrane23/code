@@ -1,0 +1,58 @@
+{
+    "key": "group_65149c98ce061",
+    "title": "[Sorting Squares] Options",
+    "fields": [
+        {
+            "key": "field_65149c99140f8",
+            "label": "Hover Color",
+            "name": "hover_color",
+            "aria-label": "",
+            "type": "select",
+            "instructions": "",
+            "required": 0,
+            "conditional_logic": 0,
+            "wrapper": {
+                "width": "",
+                "class": "",
+                "id": ""
+            },
+            "choices": {
+                "blue": "Blue",
+                "lt-blue": "Light Blue",
+                "orange": "Orange",
+                "pink": "Pink",
+                "red": "Red",
+                "purple": "Purple",
+                "green": "Green",
+                "gray": "Gray",
+                "yellow": "Yellow"
+            },
+            "default_value": "blue",
+            "return_format": "value",
+            "multiple": 0,
+            "allow_null": 0,
+            "ui": 0,
+            "ajax": 0,
+            "placeholder": ""
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "post_type",
+                "operator": "==",
+                "value": "sorting-squares"
+            }
+        ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "hide_on_screen": "",
+    "active": true,
+    "description": "",
+    "show_in_rest": 0,
+    "modified": 1695849716
+}

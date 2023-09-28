@@ -1,51 +1,8 @@
-//@import "builder/columns";
-
 // Section Styles
 .builder-section {
     background-size: cover;
     background-repeat: no-repeat;
     @import "builder/spacing/padding";
-
-    /*&:first-of-type {
-        background: rgb(0,171,237);
-        background: linear-gradient(180deg, rgba(0,171,237,1) 0%, rgba(248,248,248,1) 70%);
-        height: 100vh;
-
-        .builder-component-title h1.col-title, h2.col-title {
-            color: #000 !important;
-            font-size: 300% !important;
-        }
-
-        .scroll-blink {
-            text-align: center;
-            margin-top: 35px;
-            -webkit-animation: fadeinout 3s ease-in-out infinite;
-            animation: fadeinout 3s ease-in-out infinite;
-            opacity: 0.35;
-
-            i {
-                cursor: pointer;
-                transform: scale(1);
-                transition: .35s all;
-                font-size: 55px;
-                color: #000;
-
-                &:hover {
-                    transform: scale(1.2);
-                    opacity: 1;
-                    animation: none;
-                }
-            }
-        }
-
-        @-webkit-keyframes fadeinout {
-            50% { opacity: 1; }
-        }
-
-        @keyframes fadeinout {
-            50% { opacity: 1; }
-        }
-    }*/
 
     &.inactive {
         display: none;

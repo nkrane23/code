@@ -1,3 +1,3 @@
-exports.name = 'Nora Portfolio';
-exports.host = 'localhost/nora-portfolio';
+exports.name = 'Code Samples';
+exports.host = 'localhost/code';
 exports.debug = true;

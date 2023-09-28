@@ -1,13 +1,14 @@
 {
     "key": "group_5a146a8f8a0c7",
-    "title": "Global Page Builder Options",
+    "title": "Page Options",
     "fields": [
         {
             "key": "field_5a146aa4be2b7",
-            "label": "Constrained Containers",
-            "name": "constrained_container",
-            "type": "true_false",
-            "instructions": "",
+            "label": "Skip To Main Content Link",
+            "name": "skip_to_main",
+            "aria-label": "",
+            "type": "text",
+            "instructions": "This is used for the accessibility header nav to allow screen readers to skip to the main content. This can vary by each page and will link to the ID of the desired section.",
             "required": 0,
             "conditional_logic": 0,
             "wrapper": {
@@ -15,11 +16,11 @@
                 "class": "",
                 "id": ""
             },
-            "message": "Constrains the containers across the entire page.",
-            "default_value": 0,
-            "ui": 0,
-            "ui_on_text": "",
-            "ui_off_text": ""
+            "default_value": "",
+            "maxlength": "",
+            "placeholder": "",
+            "prepend": "#",
+            "append": ""
         }
     ],
     "location": [
@@ -39,7 +40,8 @@
     "hide_on_screen": [
         "the_content"
     ],
-    "active": 1,
+    "active": true,
     "description": "",
-    "modified": 1554912875
+    "show_in_rest": 0,
+    "modified": 1695836250
 }

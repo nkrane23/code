@@ -12,7 +12,7 @@
     <div class="content-wrap">
         <div class="builder-col">
             <?php if( have_rows('column') ):?>
-                <div class="container-<?= get_field('constrained_container') ? 'sm' : 'fluid';?>">
+                <div class="container-fluid">
                     <?php while ( have_rows('column') ) : the_row(); ?>
                         <?php get_template_part( 'builder/components-main' ); ?>
                     <?php endwhile;?>
