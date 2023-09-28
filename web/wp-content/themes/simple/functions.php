@@ -31,7 +31,7 @@ function site_scripts() {
         'styles-flickity', get_template_directory_uri() . '/dist/css/flickity.min.css');
 
     wp_enqueue_style(
-        'styles-main', get_template_directory_uri() . '/dist/css/styles.css');
+        'styles-main', get_template_directory_uri() . '/dist/css/styles.css', array(), '1.0.0');
 
     wp_enqueue_script('featherlight-js', get_template_directory_uri() . '/dist/js/featherlight.min.js', array(), '2', true);
 
