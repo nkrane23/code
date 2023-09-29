@@ -24,13 +24,13 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
 <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FPWTQ7MJMX"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3F38CQBHGS"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
-  gtag('config', 'G-FPWTQ7MJMX');
+    gtag('config', 'G-3F38CQBHGS');
 </script>
 
 <?php wp_head(); ?>
