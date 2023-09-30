@@ -1,49 +1,50 @@
-.builder-component-button a {
-    transition: .35s all;
-    text-decoration: none;
-    font-family: $font_two;
-    padding: 8px 25px;
-    display: inline-block;
-    text-transform: uppercase;
-    color: #fff;
-    font-size: 110%;
-    border-radius: 5px;
-    position: relative;
-    transform: scale(1);
-
-    &:after {
-        @include fa();
-        content: "\f054";
-        margin-left: 10px;
+.builder-component-button {
+    @media screen and (max-width: 767px) {
+        text-align: center !important;
     }
 
-    &:hover {
-        transform: scale(1.1);
-    }
+    a {
+        transition: .35s all;
+        text-decoration: none;
+        font-family: $font_two;
+        padding: 8px 25px;
+        display: inline-block;
+        text-transform: uppercase;
+        color: #fff;
+        font-size: 110%;
+        border-radius: 5px;
+        position: relative;
+        transform: scale(1);
 
-    &.purple {
-        background: $dark_purple;
-    }
+        &:after {
+            @include fa();
+            content: "\f054";
+            margin-left: 10px;
+        }
 
-    &.red {
-        background: $red;
-    }
+        &:hover {
+            transform: scale(1.1);
+        }
 
-    &.navy {
-        background: $navy;
-    }
+        &.purple {
+            background: $dark_purple;
+        }
 
-    &.lt-blue {
-        background: $lt-blue;
-    }
+        &.red {
+            background: $red;
+        }
 
-    &.blue {
-        background: $bright-blue;
-    }
+        &.green {
+            background: $green;
+        }
 
-    &.style-off-white {
-        background: $off-white;
-        color: #000;
+        &.lt-blue {
+            background: $lt-blue;
+        }
+
+        &.blue {
+            background: $bright-blue;
+        }
     }
 }
 
