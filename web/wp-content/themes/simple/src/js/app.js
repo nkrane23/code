@@ -30,7 +30,9 @@ const utils = require('./lib/even-height');
         });
 
 
-        $('.header-wrap a.hamburger').on('click', function () {
+        $('.header-wrap a.hamburger').on('click', function (e) {
+            e.preventDefault();
+
             const $button = $('a.hamburger');
             const $menu = $('.mobile-nav');
 

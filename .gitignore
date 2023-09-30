@@ -54,3 +54,4 @@ wp-content/wp-cache-config.php
 
 .php-ini
 .php-version
+.well-known/
