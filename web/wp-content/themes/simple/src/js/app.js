@@ -28,8 +28,7 @@ const utils = require('./lib/even-height');
                 $header.removeClass('u-hidden');
             }
         });
-
-
+        
         $('.header-wrap a.hamburger').on('click', function (e) {
             e.preventDefault();
 
