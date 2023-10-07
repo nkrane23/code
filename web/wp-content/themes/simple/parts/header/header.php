@@ -9,11 +9,11 @@
 
             <?php get_template_part('parts/site/social-icons');?>
 
-            <a href="#" class="hamburger hamburger--spring js-hamburger" type="button" aria-label="mobile-menu">
+            <button class="hamburger hamburger--spring js-hamburger" type="button" aria-label="mobile-menu">
                 <span class="hamburger-box">
                     <span class="hamburger-inner"></span>
                 </span>
-            </a>
+            </button>
         </div>
     </div>
 

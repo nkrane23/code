@@ -28,11 +28,9 @@ const utils = require('./lib/even-height');
                 $header.removeClass('u-hidden');
             }
         });
-        
-        $('.header-wrap a.hamburger').on('click', function (e) {
-            e.preventDefault();
 
-            const $button = $('a.hamburger');
+        $('.header-wrap button.hamburger').on('click', function () {
+            const $button = $('button.hamburger');
             const $menu = $('.mobile-nav');
 
             $button.toggleClass('is-active');
@@ -129,7 +127,7 @@ const utils = require('./lib/even-height');
         $(window).load(function() {
             const intervalFunction = setInterval(function() {
                 $grid_filter.isotope('layout');
-                //console.log($grid_filter);
+                // console.log($grid_filter);
             }, 900);
 
             setTimeout(function() {
