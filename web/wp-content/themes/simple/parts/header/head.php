@@ -21,10 +21,6 @@
 <!-- Google Fonts-->
 <link href="https://fonts.googleapis.com/css?family=Dosis:400,500|Lora|Bad+Script|Comfortaa" rel="stylesheet">
 
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css">
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3F38CQBHGS"></script>
 <script>

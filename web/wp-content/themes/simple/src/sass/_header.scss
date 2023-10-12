@@ -219,19 +219,33 @@
 
         .social-icons {
             text-align: center;
+            display: flex;
+            justify-content: center;
 
             a {
                 color: $dk-gray;
                 text-decoration: none;
+            }
+
+            .instagram, .linkedin {
+                max-width: 30px;
                 margin-right: 10px;
+                transform: scale(1);
+                transition: .35s all;
+
+                &:hover {
+                    transform: scale(1.1);
+                }
             }
 
-            .fa-linkedin, .fa-instagram {
-                font-size: 2em;
-            }
+            .pdf {
+                max-width: 27px;
+                transform: scale(1);
+                transition: .35s all;
 
-            .fa-file-pdf {
-                font-size: 29px;
+                &:hover {
+                    transform: scale(1.2);
+                }
             }
 
             @media screen and (max-width: 991px) {
@@ -340,9 +354,11 @@
         }
     }
 
-    .social-icons {
+    .social-icons-white {
         position: relative;
         bottom: 25%;
+        display: flex;
+        justify-content: center;
 
         a {
             text-decoration: none;
@@ -352,10 +368,15 @@
             &:last-of-type {
                 margin-right: 0;
             }
+        }
 
-            i {
-                font-size: 2em;
-            }
+        .instagram, .linkedin {
+            max-width: 30px;
+            margin-right: 10px;
+        }
+
+        .pdf {
+            max-width: 27px;
         }
     }
 }

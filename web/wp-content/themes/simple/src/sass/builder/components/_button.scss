@@ -1,50 +1,60 @@
-.builder-component-button {
-    @media screen and (max-width: 767px) {
-        text-align: center !important;
+.builder-component-button a {
+    transition: .35s all;
+    text-decoration: none;
+    font-family: $font_two;
+    padding: 8px 25px;
+    display: inline-block;
+    text-transform: uppercase;
+    color: #fff;
+    font-size: 110%;
+    border-radius: 5px;
+    position: relative;
+    transform: scale(1);
+
+    span {
+        display: inline-block;
+        position: relative;
+        padding-right: 15px;
     }
 
-    a {
-        transition: .35s all;
-        text-decoration: none;
-        font-family: $font_two;
-        padding: 8px 25px;
+    &:after {
+        // TODO: Remove font awesome include
+        // @include fa();
+        content: "";
+        background-image: url("../../images/arrow-right.webp");
+        background-repeat: no-repeat;
+        background-size: contain;
         display: inline-block;
-        text-transform: uppercase;
-        color: #fff;
-        font-size: 110%;
-        border-radius: 5px;
-        position: relative;
-        transform: scale(1);
+        width: 10px;
+        height: 15px;
+        position: absolute;
+        top: 14px;
+        right: 20px;
+    }
 
-        &:after {
-            @include fa();
-            content: "\f054";
-            margin-left: 10px;
-        }
+    &:hover {
+        transform: scale(1.1);
+    }
 
-        &:hover {
-            transform: scale(1.1);
-        }
+    &.purple {
+        background: $dark_purple;
+    }
 
-        &.purple {
-            background: $dark_purple;
-        }
+    &.navy {
+        background: $navy;
+    }
 
-        &.red {
-            background: $red;
-        }
+    &.lt-blue {
+        background: $lt-blue;
+    }
 
-        &.green {
-            background: $green;
-        }
+    &.blue {
+        background: $bright-blue;
+    }
 
-        &.lt-blue {
-            background: $lt-blue;
-        }
-
-        &.blue {
-            background: $bright-blue;
-        }
+    &.style-off-white {
+        background: $off-white;
+        color: #000;
     }
 }
 

@@ -38,22 +38,21 @@ footer {
         padding: 15px;
     }
 
-    .social-icons {
+    .social-icons-white {
         display: none;
 
         @media screen and (max-width: 991px) {
-            display: block;
-            text-align: center;
+            display: flex;
+            justify-content: center;
             margin-top: 20px;
 
-            i {
-                color: #ffffff;
-                margin-left: 15px;
-                font-size: 28px;
+            .instagram, .linkedin {
+                max-width: 20px;
+                margin-right: 15px;
             }
 
-            .fa-file-pdf-o {
-                font-size: 26px;
+            .pdf {
+                max-width: 20px;
             }
         }
     }

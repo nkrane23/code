@@ -20,6 +20,6 @@
     <div id="menu-wrapper" class="mobile-nav" role="navigation">
         <?php wp_nav_menu(array('theme_location' => 'main-nav')); ?>
 
-        <?php get_template_part('parts/site/social-icons');?>
+        <?php get_template_part('parts/site/social-icons-white');?>
     </div>
 </header>

@@ -10,7 +10,7 @@
 
         <div class="row">
             <div class="col-md-12">
-                <?php get_template_part('parts/site/social-icons');?>
+                <?php get_template_part('parts/site/social-icons-white');?>
             </div>
         </div>
     </div>

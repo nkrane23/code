@@ -48,18 +48,6 @@ function styles() {
     }
 }
 
-function btn_opts() {
-    return $align = 'style="text-align: ' . get_sub_field('alignment') . ';"';
-}
-
-function btn_classes() {
-    if(get_sub_field('animate') == 'true') {
-        return 'class="builder-component builder-component-button-special"';
-    } else {
-        return 'class="builder-component builder-component-button"';
-    }
-}
-
 function jump_link() {
     list($options) = get_sub_field('options');
     echo '<span class="'. $options['jump_link'] .'" data-scroll='. $options['jump_link'] .'></span>';
