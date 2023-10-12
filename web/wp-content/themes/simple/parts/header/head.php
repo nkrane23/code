@@ -10,6 +10,8 @@
 <link rel="icon" type="image/png" sizes="16x16" href="<?php echo get_template_directory_uri(); ?>/images/favicons/favicon-16x16.png">
 <link rel="manifest" href="<?php echo get_template_directory_uri(); ?>/images/favicons/site.webmanifest">
 
+<meta name="description" content="My name is Nora and these are some of my code samples. I make well tuned websites out of clean efficient code that run on WordPress.">
+
 <link href="<?php echo get_template_directory_uri(); ?>/images/favicons/apple-touch-logo.png" rel="apple-touch-icon-precomposed">
 
 <script type="text/javascript">
