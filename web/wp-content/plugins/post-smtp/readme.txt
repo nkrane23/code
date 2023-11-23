@@ -3,8 +3,8 @@ Plugin URI: https://postmansmtp.com/
 Contributors: wpexpertsio
 Tags: email, mail, smtp, wordpress smtp, email log, postman smtp, postman, gmail, google apps, hotmail, yahoo, mandrill api, sendgrid api, elastic email, office365, mailgun
 Requires at least: 5.6.0
-Tested up to: 6.3.2
-Stable tag: 2.7.3
+Tested up to: 6.4.1
+Stable tag: 2.8.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,8 @@ Postmark is a cloud-based email management software designed to help businesses 
 
 * **SparkPost API for sending any email** (requires a [SparkPost](https://www.sparkpost.com/) account and PHP 5.3)
 SparkPost is a cloud-based email analytics solution designed to help businesses of all sizes optimize email performance, deliverability, engagement, and more.
+
+* **Mailjet API for sending any email** (requires a [Mailjet](https://www.mailjet.com/) account)
 
 = Compatibility & Support =
 * [Contact Form 7](https://wordpress.org/plugins/contact-form-7/)
@@ -319,13 +321,35 @@ To avoid being flagged as spam, you need to prove your email isn't forged. On a 
 
 == Changelog ==
 
-= 2.7.3 - 2023-11-06 =
+= 2.8.4 - 2023-11-20 =
 
-* Fix- Mobile app banner issue.
+* Fix: From name and emails, prevention settings were not being saved correctly in some cases in the new wizard.
+* Fix: In some sockets, the API keys getting saved were encoded in multiple layers.
+
+= 2.8.3 - 2023-11-17 =
+
+* Fix - Getting error when saving settings in some scenarios.
+* Improvement - Optimized QR code scanning module for [Post SMTP mobile app](https://postmansmtp.com/documentation/advance-functionality/postsmtp-mobile-app/?utm_source=wp_org&utm_medium=changelog) to avoid any scanning delays
+
+= 2.8.2 - 2023-11-14 =
+
+* Improvement - PHP < 7.3 compatibility added.
+
+= 2.8.1 - 2023-11-13 =
+
+* Fix - Other SMTP option in the wizard was not saving the settings correctly.
+
+= 2.8.0 - 2023-11-13 =
+
+* NEW – Introducing a NEW 3-step wizard to speed up the initial setup.
+* NEW - Added documentation within the wizard to ease out the setup
+* NEW - Added new socket/email service for [Mailjet](https://www.mailjet.com/)
+* NEW - Added support for default socket within wizard (you can use this option in case you want to use the logs functionality only)
+* Fix - Updated the error string as reported by @interaptivre
 
 = 2.7.2 - 2023-11-01 =
 
-* Improvement - Mobile App banner improvement
+* Improvement - Mobile App banner improvement.
 
 = 2.7.1 - 2023-11-01 =
 

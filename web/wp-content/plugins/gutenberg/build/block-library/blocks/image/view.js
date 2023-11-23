@@ -117,8 +117,7 @@ function handleScroll(context) {
           window.addEventListener('scroll', scrollCallback, false);
         },
         hideLightbox: async ({
-          context,
-          event
+          context
         }) => {
           context.core.image.hideAnimationEnabled = true;
           if (context.core.image.lightboxEnabled) {
@@ -130,18 +129,14 @@ function handleScroll(context) {
             // may scroll too soon and cause the animation to look sloppy.
             setTimeout(function () {
               window.removeEventListener('scroll', scrollCallback);
-            }, 450);
-            context.core.image.lightboxEnabled = false;
-
-            // We want to avoid drawing attention to the button
-            // after the lightbox closes for mouse and touch users.
-            // Note that the `event.pointerType` property returns
-            // as an empty string if a keyboard fired the event.
-            if (event.pointerType === '') {
-              context.core.image.lastFocusedElement.focus({
+              // If we don't delay before changing the focus,
+              // the focus ring will appear on Firefox before
+              // the image has finished animating, which looks broken.
+              context.core.image.lightboxTriggerRef.focus({
                 preventScroll: true
               });
-            }
+            }, 450);
+            context.core.image.lightboxEnabled = false;
           }
         },
         handleKeydown: ({
@@ -250,6 +245,7 @@ function handleScroll(context) {
           ref
         }) => {
           context.core.image.imageRef = ref;
+          context.core.image.lightboxTriggerRef = ref.parentElement.querySelector('.lightbox-trigger');
           if (ref.complete) {
             context.core.image.imageLoaded = true;
             context.core.image.imageCurrentSrc = ref.currentSrc;
@@ -264,14 +260,8 @@ function handleScroll(context) {
             context.core.image.firstFocusableElement = focusableElements[0];
             context.core.image.lastFocusableElement = focusableElements[focusableElements.length - 1];
 
-            // We want to avoid drawing unnecessary attention to the close
-            // button for mouse and touch users. Note that even if opening
-            // the lightbox via keyboard, the event fired is of type
-            // `pointerEvent`, so we need to rely on the `event.pointerType`
-            // property, which returns an empty string for keyboard events.
-            if (context.core.image.pointerType === '') {
-              ref.querySelector('.close-button').focus();
-            }
+            // Move focus to the dialog when opening it.
+            ref.focus();
           }
         },
         setButtonStyles: ({
@@ -302,7 +292,9 @@ function handleScroll(context) {
           const caption = figure.querySelector('figcaption');
           if (caption) {
             const captionComputedStyle = window.getComputedStyle(caption);
-            figureHeight = figureHeight - caption.offsetHeight - parseFloat(captionComputedStyle.marginTop) - parseFloat(captionComputedStyle.marginBottom);
+            if (!['absolute', 'fixed'].includes(captionComputedStyle.position)) {
+              figureHeight = figureHeight - caption.offsetHeight - parseFloat(captionComputedStyle.marginTop) - parseFloat(captionComputedStyle.marginBottom);
+            }
           }
           const buttonOffsetTop = figureHeight - offsetHeight;
           const buttonOffsetRight = figureWidth - offsetWidth;
@@ -319,18 +311,18 @@ function handleScroll(context) {
               // If it reaches the width first, keep
               // the width and compute the height.
               const referenceHeight = offsetWidth / naturalRatio;
-              context.core.image.imageButtonTop = (offsetHeight - referenceHeight) / 2 + buttonOffsetTop + 10;
-              context.core.image.imageButtonRight = buttonOffsetRight + 10;
+              context.core.image.imageButtonTop = (offsetHeight - referenceHeight) / 2 + buttonOffsetTop + 16;
+              context.core.image.imageButtonRight = buttonOffsetRight + 16;
             } else {
               // If it reaches the height first, keep
               // the height and compute the width.
               const referenceWidth = offsetHeight * naturalRatio;
-              context.core.image.imageButtonTop = buttonOffsetTop + 10;
-              context.core.image.imageButtonRight = (offsetWidth - referenceWidth) / 2 + buttonOffsetRight + 10;
+              context.core.image.imageButtonTop = buttonOffsetTop + 16;
+              context.core.image.imageButtonRight = (offsetWidth - referenceWidth) / 2 + buttonOffsetRight + 16;
             }
           } else {
-            context.core.image.imageButtonTop = buttonOffsetTop + 10;
-            context.core.image.imageButtonRight = buttonOffsetRight + 10;
+            context.core.image.imageButtonTop = buttonOffsetTop + 16;
+            context.core.image.imageButtonRight = buttonOffsetRight + 16;
           }
         },
         setStylesOnResize: ({
@@ -510,6 +502,7 @@ function setStyles(context, ref) {
 			--wp--lightbox-image-width: ${lightboxImgWidth}px;
 			--wp--lightbox-image-height: ${lightboxImgHeight}px;
 			--wp--lightbox-scale: ${containerScale};
+			--wp--lightbox-scrollbar-width: ${window.innerWidth - document.documentElement.clientWidth}px;
 		}
 	`;
 }
