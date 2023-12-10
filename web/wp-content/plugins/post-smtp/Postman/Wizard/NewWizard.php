@@ -119,7 +119,7 @@ class Post_SMTP_New_Wizard {
                                 We're sorry, the <span class="ps-pro-for"></span> mailer is not available on your plan. Please upgrade to the PRO plan to unlock all these awesome fetures.
                             </p>
                             <div>
-                                <a href="https://postmansmtp.com/pricing/?utm_source=plugin&utm_medium=dashboard" target="_blank" class="button button-primary ps-yellow-btn" style="color: #ffffff!important">UPGRADE TO PRO</a>
+                                <a href="https://postmansmtp.com/pricing/?utm_source=plugin&utm_medium=wizard" target="_blank" class="button button-primary ps-yellow-btn" style="color: #ffffff!important">UPGRADE TO PRO</a>
                             </div>
                             <div>
                                 <a href="" class="ps-pro-close-popup" style="color: #c2c2c2; font-size: 10px;">Already purchased?</a>
@@ -366,7 +366,7 @@ class Post_SMTP_New_Wizard {
                                                 __( '⚡ Advanced Email delivery and logs', 'post-smtp' ),
                                                 __( 'You can automate the process of retrying failed email attempts and optamize your website for users by sending emails asychronously from the backend.' )
                                             ) ?></p>
-                                            <a href="<?php echo esc_url( 'https://postmansmtp.com/extension/' ); ?>" class="button button-primary ps-yellow-btn" target="_blank"><?php esc_html_e( 'CHECK THERE ADDONS', 'post-smtp' ); ?><span class="dashicons dashicons-arrow-right-alt"></span></a>
+                                            <a href="<?php echo esc_url( 'https://postmansmtp.com/extension/' ); ?>" class="button button-primary ps-yellow-btn" target="_blank"><?php esc_html_e( 'CHECK OTHER ADDONS', 'post-smtp' ); ?><span class="dashicons dashicons-arrow-right-alt"></span></a>
                                         </div>
                                     </div>
                                 </div>
