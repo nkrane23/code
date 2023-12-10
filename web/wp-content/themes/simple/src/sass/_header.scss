@@ -190,6 +190,10 @@
                         background-color: rgba(255, 228, 0, 0.69);
                     }
 
+                    &:nth-child(4) a:after {
+                        background-color: rgba(155, 0, 245, 0.4);
+                    }
+
                     &.current-menu-item a {
                         color: #000;
 
