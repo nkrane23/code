@@ -115,9 +115,12 @@ const PARTIAL_SYNCING_SUPPORTED_BLOCKS = {
   },
   'core/button': {
     text: (0,external_wp_i18n_namespaceObject.__)('Text'),
-    url: (0,external_wp_i18n_namespaceObject.__)('URL')
+    url: (0,external_wp_i18n_namespaceObject.__)('URL'),
+    linkTarget: (0,external_wp_i18n_namespaceObject.__)('Link Target'),
+    rel: (0,external_wp_i18n_namespaceObject.__)('Link Relationship')
   },
   'core/image': {
+    id: (0,external_wp_i18n_namespaceObject.__)('Image ID'),
     url: (0,external_wp_i18n_namespaceObject.__)('URL'),
     title: (0,external_wp_i18n_namespaceObject.__)('Title'),
     alt: (0,external_wp_i18n_namespaceObject.__)('Alt Text')
@@ -362,6 +365,101 @@ function CategorySelector({
   });
 }
 
+;// CONCATENATED MODULE: ./packages/patterns/build-module/private-hooks.js
+/**
+ * WordPress dependencies
+ */
+
+
+
+
+/**
+ * Internal dependencies
+ */
+
+
+/**
+ * Helper hook that creates a Map with the core and user patterns categories
+ * and removes any duplicates. It's used when we need to create new user
+ * categories when creating or importing patterns.
+ * This hook also provides a function to find or create a pattern category.
+ *
+ * @return {Object} The merged categories map and the callback function to find or create a category.
+ */
+function useAddPatternCategory() {
+  const {
+    saveEntityRecord,
+    invalidateResolution
+  } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_coreData_namespaceObject.store);
+  const {
+    corePatternCategories,
+    userPatternCategories
+  } = (0,external_wp_data_namespaceObject.useSelect)(select => {
+    const {
+      getUserPatternCategories,
+      getBlockPatternCategories
+    } = select(external_wp_coreData_namespaceObject.store);
+    return {
+      corePatternCategories: getBlockPatternCategories(),
+      userPatternCategories: getUserPatternCategories()
+    };
+  }, []);
+  const categoryMap = (0,external_wp_element_namespaceObject.useMemo)(() => {
+    // Merge the user and core pattern categories and remove any duplicates.
+    const uniqueCategories = new Map();
+    userPatternCategories.forEach(category => {
+      uniqueCategories.set(category.label.toLowerCase(), {
+        label: category.label,
+        name: category.name,
+        id: category.id
+      });
+    });
+    corePatternCategories.forEach(category => {
+      if (!uniqueCategories.has(category.label.toLowerCase()) &&
+      // There are two core categories with `Post` label so explicitly remove the one with
+      // the `query` slug to avoid any confusion.
+      category.name !== 'query') {
+        uniqueCategories.set(category.label.toLowerCase(), {
+          label: category.label,
+          name: category.name
+        });
+      }
+    });
+    return uniqueCategories;
+  }, [userPatternCategories, corePatternCategories]);
+  async function findOrCreateTerm(term) {
+    try {
+      const existingTerm = categoryMap.get(term.toLowerCase());
+      if (existingTerm?.id) {
+        return existingTerm.id;
+      }
+      // If we have an existing core category we need to match the new user category to the
+      // correct slug rather than autogenerating it to prevent duplicates, eg. the core `Headers`
+      // category uses the singular `header` as the slug.
+      const termData = existingTerm ? {
+        name: existingTerm.label,
+        slug: existingTerm.name
+      } : {
+        name: term
+      };
+      const newTerm = await saveEntityRecord('taxonomy', CATEGORY_SLUG, termData, {
+        throwOnError: true
+      });
+      invalidateResolution('getUserPatternCategories');
+      return newTerm.id;
+    } catch (error) {
+      if (error.code !== 'term_exists') {
+        throw error;
+      }
+      return error.data.term_id;
+    }
+  }
+  return {
+    categoryMap,
+    findOrCreateTerm
+  };
+}
+
 ;// CONCATENATED MODULE: ./packages/patterns/build-module/components/create-pattern-modal.js
 
 /**
@@ -373,15 +471,11 @@ function CategorySelector({
 
 
 
-
 /**
  * Internal dependencies
  */
 
 
-/**
- * Internal dependencies
- */
 
 
 
@@ -416,48 +510,12 @@ function CreatePatternModalContents({
     createPattern
   } = unlock((0,external_wp_data_namespaceObject.useDispatch)(store));
   const {
-    saveEntityRecord,
-    invalidateResolution
-  } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_coreData_namespaceObject.store);
-  const {
     createErrorNotice
   } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_notices_namespaceObject.store);
   const {
-    corePatternCategories,
-    userPatternCategories
-  } = (0,external_wp_data_namespaceObject.useSelect)(select => {
-    const {
-      getUserPatternCategories,
-      getBlockPatternCategories
-    } = select(external_wp_coreData_namespaceObject.store);
-    return {
-      corePatternCategories: getBlockPatternCategories(),
-      userPatternCategories: getUserPatternCategories()
-    };
-  });
-  const categoryMap = (0,external_wp_element_namespaceObject.useMemo)(() => {
-    // Merge the user and core pattern categories and remove any duplicates.
-    const uniqueCategories = new Map();
-    userPatternCategories.forEach(category => {
-      uniqueCategories.set(category.label.toLowerCase(), {
-        label: category.label,
-        name: category.name,
-        id: category.id
-      });
-    });
-    corePatternCategories.forEach(category => {
-      if (!uniqueCategories.has(category.label.toLowerCase()) &&
-      // There are two core categories with `Post` label so explicitly remove the one with
-      // the `query` slug to avoid any confusion.
-      category.name !== 'query') {
-        uniqueCategories.set(category.label.toLowerCase(), {
-          label: category.label,
-          name: category.name
-        });
-      }
-    });
-    return uniqueCategories;
-  }, [userPatternCategories, corePatternCategories]);
+    categoryMap,
+    findOrCreateTerm
+  } = useAddPatternCategory();
   async function onCreate(patternTitle, sync) {
     if (!title || isSaving) {
       return;
@@ -480,38 +538,6 @@ function CreatePatternModalContents({
       setIsSaving(false);
       setCategoryTerms([]);
       setTitle('');
-    }
-  }
-
-  /**
-   * @param {string} term
-   * @return {Promise<number>} The pattern category id.
-   */
-  async function findOrCreateTerm(term) {
-    try {
-      const existingTerm = categoryMap.get(term.toLowerCase());
-      if (existingTerm && existingTerm.id) {
-        return existingTerm.id;
-      }
-      // If we have an existing core category we need to match the new user category to the
-      // correct slug rather than autogenerating it to prevent duplicates, eg. the core `Headers`
-      // category uses the singular `header` as the slug.
-      const termData = existingTerm ? {
-        name: existingTerm.label,
-        slug: existingTerm.name
-      } : {
-        name: term
-      };
-      const newTerm = await saveEntityRecord('taxonomy', CATEGORY_SLUG, termData, {
-        throwOnError: true
-      });
-      invalidateResolution('getUserPatternCategories');
-      return newTerm.id;
-    } catch (error) {
-      if (error.code !== 'term_exists') {
-        throw error;
-      }
-      return error.data.term_id;
     }
   }
   return (0,external_React_namespaceObject.createElement)("form", {
@@ -1245,10 +1271,72 @@ function PartialSyncingControls({
 }
 /* harmony default export */ const partial_syncing_controls = (PartialSyncingControls);
 
+;// CONCATENATED MODULE: ./packages/patterns/build-module/components/reset-overrides-control.js
+
+/**
+ * WordPress dependencies
+ */
+
+
+
+
+
+
+function recursivelyFindBlockWithId(blocks, id) {
+  for (const block of blocks) {
+    if (block.attributes.metadata?.id === id) {
+      return block;
+    }
+    const found = recursivelyFindBlockWithId(block.innerBlocks, id);
+    if (found) {
+      return found;
+    }
+  }
+}
+function ResetOverridesControl(props) {
+  const registry = (0,external_wp_data_namespaceObject.useRegistry)();
+  const id = props.attributes.metadata?.id;
+  const patternWithOverrides = (0,external_wp_data_namespaceObject.useSelect)(select => {
+    if (!id) {
+      return undefined;
+    }
+    const {
+      getBlockParentsByBlockName,
+      getBlocksByClientId
+    } = select(external_wp_blockEditor_namespaceObject.store);
+    const patternBlock = getBlocksByClientId(getBlockParentsByBlockName(props.clientId, 'core/block'))[0];
+    if (!patternBlock?.attributes.content?.[id]) {
+      return undefined;
+    }
+    return patternBlock;
+  }, [props.clientId, id]);
+  const resetOverrides = async () => {
+    var _editedRecord$blocks;
+    const editedRecord = await registry.resolveSelect(external_wp_coreData_namespaceObject.store).getEditedEntityRecord('postType', 'wp_block', patternWithOverrides.attributes.ref);
+    const blocks = (_editedRecord$blocks = editedRecord.blocks) !== null && _editedRecord$blocks !== void 0 ? _editedRecord$blocks : (0,external_wp_blocks_namespaceObject.parse)(editedRecord.content);
+    const block = recursivelyFindBlockWithId(blocks, id);
+    const newAttributes = Object.assign(
+    // Reset every existing attribute to undefined.
+    Object.fromEntries(Object.keys(props.attributes).map(key => [key, undefined])),
+    // Then assign the original attributes.
+    block.attributes);
+    props.setAttributes(newAttributes);
+  };
+  return (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
+    group: "other"
+  }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ToolbarGroup, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ToolbarButton, {
+    onClick: resetOverrides,
+    disabled: !patternWithOverrides,
+    __experimentalIsFocusable: true
+  }, (0,external_wp_i18n_namespaceObject.__)('Reset'))));
+}
+
 ;// CONCATENATED MODULE: ./packages/patterns/build-module/private-apis.js
 /**
  * Internal dependencies
  */
+
+
 
 
 
@@ -1267,6 +1355,8 @@ lock(privateApis, {
   PatternsMenuItems: PatternsMenuItems,
   RenamePatternCategoryModal: RenamePatternCategoryModal,
   PartialSyncingControls: partial_syncing_controls,
+  ResetOverridesControl: ResetOverridesControl,
+  useAddPatternCategory: useAddPatternCategory,
   PATTERN_TYPES: PATTERN_TYPES,
   PATTERN_DEFAULT_CATEGORY: PATTERN_DEFAULT_CATEGORY,
   PATTERN_USER_CATEGORY: PATTERN_USER_CATEGORY,

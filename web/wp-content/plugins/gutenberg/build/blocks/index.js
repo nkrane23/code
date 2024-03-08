@@ -5828,7 +5828,7 @@ __webpack_require__.r(__webpack_exports__);
 // EXPORTS
 __webpack_require__.d(__webpack_exports__, {
   __EXPERIMENTAL_ELEMENTS: () => (/* reexport */ __EXPERIMENTAL_ELEMENTS),
-  __EXPERIMENTAL_PATHS_WITH_MERGE: () => (/* reexport */ __EXPERIMENTAL_PATHS_WITH_MERGE),
+  __EXPERIMENTAL_PATHS_WITH_OVERRIDE: () => (/* reexport */ __EXPERIMENTAL_PATHS_WITH_OVERRIDE),
   __EXPERIMENTAL_STYLE_PROPERTY: () => (/* reexport */ __EXPERIMENTAL_STYLE_PROPERTY),
   __experimentalCloneSanitizedBlock: () => (/* reexport */ __experimentalCloneSanitizedBlock),
   __experimentalGetAccessibleBlockLabel: () => (/* reexport */ getAccessibleBlockLabel),
@@ -6726,7 +6726,7 @@ const __EXPERIMENTAL_STYLE_PROPERTY = {
   }
 };
 const __EXPERIMENTAL_ELEMENTS = {
-  link: 'a',
+  link: 'a:where(:not(.wp-element-button))',
   heading: 'h1, h2, h3, h4, h5, h6',
   h1: 'h1',
   h2: 'h2',
@@ -6738,11 +6738,14 @@ const __EXPERIMENTAL_ELEMENTS = {
   caption: '.wp-element-caption, .wp-block-audio figcaption, .wp-block-embed figcaption, .wp-block-gallery figcaption, .wp-block-image figcaption, .wp-block-table figcaption, .wp-block-video figcaption',
   cite: 'cite'
 };
-const __EXPERIMENTAL_PATHS_WITH_MERGE = {
+
+// These paths may have three origins, custom, theme, and default,
+// and are expected to override other origins with custom, theme,
+// and default priority.
+const __EXPERIMENTAL_PATHS_WITH_OVERRIDE = {
   'color.duotone': true,
   'color.gradients': true,
   'color.palette': true,
-  'typography.fontFamilies': true,
   'typography.fontSizes': true,
   'spacing.spacingSizes': true
 };
@@ -9214,13 +9217,13 @@ function filterElementBlockSupports(blockSupports, name, element) {
       return false;
     }
 
-    // This is only available for heading
-    if (support === 'textTransform' && !name && !['heading', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(element)) {
+    // This is only available for heading, button, caption and text
+    if (support === 'textTransform' && !name && !(['heading', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(element) || element === 'button' || element === 'caption' || element === 'text')) {
       return false;
     }
 
-    // This is only available for headings
-    if (support === 'letterSpacing' && !name && !['heading', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(element)) {
+    // This is only available for heading, button, caption and text
+    if (support === 'letterSpacing' && !name && !(['heading', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(element) || element === 'button' || element === 'caption' || element === 'text')) {
       return false;
     }
 
@@ -12197,7 +12200,6 @@ function convertLegacyBlockNameAndAttributes(name, attributes) {
     // Note that we also had to add a deprecation to the block in order
     // for the ID change to work.
   }
-
   if (name === 'core/post-comments') {
     name = 'core/comments';
     newAttributes.legacy = true;

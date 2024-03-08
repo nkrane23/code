@@ -36,6 +36,7 @@ if ( class_exists( 'WP_REST_Controller' ) ) {
 	}
 
 	// WordPress 6.4 compat.
+	require_once __DIR__ . '/compat/wordpress-6.4/class-gutenberg-rest-templates-controller-6-4.php';
 	require_once __DIR__ . '/compat/wordpress-6.4/class-gutenberg-rest-global-styles-revisions-controller-6-4.php';
 	require_once __DIR__ . '/compat/wordpress-6.4/class-gutenberg-rest-block-patterns-controller.php';
 	require_once __DIR__ . '/compat/wordpress-6.4/rest-api.php';
@@ -53,7 +54,6 @@ if ( class_exists( 'WP_REST_Controller' ) ) {
 	if ( ! class_exists( 'WP_Rest_Customizer_Nonces' ) ) {
 		require_once __DIR__ . '/experimental/class-wp-rest-customizer-nonces.php';
 	}
-	require_once __DIR__ . '/experimental/class-gutenberg-rest-template-revision-count.php';
 	require_once __DIR__ . '/experimental/rest-api.php';
 
 	require_once __DIR__ . '/experimental/kses-allowed-html.php';
@@ -104,6 +104,7 @@ require __DIR__ . '/compat/wordpress-6.4/script-loader.php';
 require __DIR__ . '/compat/wordpress-6.4/kses.php';
 
 // WordPress 6.5 compat.
+require __DIR__ . '/compat/wordpress-6.5/compat.php';
 require __DIR__ . '/compat/wordpress-6.5/blocks.php';
 require __DIR__ . '/compat/wordpress-6.5/block-patterns.php';
 require __DIR__ . '/compat/wordpress-6.5/kses.php';
@@ -112,14 +113,17 @@ require __DIR__ . '/compat/wordpress-6.5/interactivity-api/class-wp-interactivit
 require __DIR__ . '/compat/wordpress-6.5/interactivity-api/interactivity-api.php';
 require __DIR__ . '/compat/wordpress-6.5/class-wp-script-modules.php';
 require __DIR__ . '/compat/wordpress-6.5/scripts-modules.php';
+require __DIR__ . '/compat/wordpress-6.5/navigation-block-variations.php';
+if ( ! class_exists( 'WP_Block_Bindings_Source' ) ) {
+	require __DIR__ . '/compat/wordpress-6.5/block-bindings/class-wp-block-bindings-source.php';
+}
 if ( ! class_exists( 'WP_Block_Bindings_Registry' ) ) {
 	require __DIR__ . '/compat/wordpress-6.5/block-bindings/class-wp-block-bindings-registry.php';
 }
 require __DIR__ . '/compat/wordpress-6.5/block-bindings/block-bindings.php';
-require __DIR__ . '/compat/wordpress-6.5/block-bindings/sources/post-meta.php';
-require __DIR__ . '/compat/wordpress-6.5/block-bindings/sources/pattern.php';
+require __DIR__ . '/compat/wordpress-6.5/block-bindings/post-meta.php';
+require __DIR__ . '/compat/wordpress-6.5/block-bindings/pattern-overrides.php';
 require __DIR__ . '/compat/wordpress-6.5/script-loader.php';
-
 
 // Experimental features.
 require __DIR__ . '/experimental/block-editor-settings-mobile.php';
@@ -180,12 +184,14 @@ require __DIR__ . '/global-styles-and-settings.php';
 require __DIR__ . '/class-wp-theme-json-data-gutenberg.php';
 require __DIR__ . '/class-wp-theme-json-gutenberg.php';
 require __DIR__ . '/class-wp-theme-json-resolver-gutenberg.php';
+require __DIR__ . '/class-wp-theme-json-schema-gutenberg.php';
 require __DIR__ . '/class-wp-duotone-gutenberg.php';
 require __DIR__ . '/blocks.php';
 require __DIR__ . '/block-editor-settings.php';
 require __DIR__ . '/client-assets.php';
 require __DIR__ . '/demo.php';
 require __DIR__ . '/experiments-page.php';
+require __DIR__ . '/interactivity-api.php';
 
 // Copied package PHP files.
 if ( is_dir( __DIR__ . '/../build/style-engine' ) ) {

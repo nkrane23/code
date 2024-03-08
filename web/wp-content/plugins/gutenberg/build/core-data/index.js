@@ -606,6 +606,7 @@ __webpack_require__.d(build_module_selectors_namespaceObject, {
 var private_selectors_namespaceObject = {};
 __webpack_require__.r(private_selectors_namespaceObject);
 __webpack_require__.d(private_selectors_namespaceObject, {
+  getBlockPatternsForPostType: () => (getBlockPatternsForPostType),
   getNavigationFallbackId: () => (getNavigationFallbackId),
   getUndoManager: () => (getUndoManager)
 });
@@ -17563,7 +17564,7 @@ const deriveKey = (secret, roomName) => {
  */
 const encrypt = (data, key) => {
   if (!key) {
-    return (/** @type {PromiseLike<Uint8Array>} */
+    return /** @type {PromiseLike<Uint8Array>} */(
       resolve(data)
     );
   }
@@ -17598,7 +17599,7 @@ const encryptJson = (data, key) => {
  */
 const decrypt = (data, key) => {
   if (!key) {
-    return (/** @type {PromiseLike<Uint8Array>} */
+    return /** @type {PromiseLike<Uint8Array>} */(
       resolve(data)
     );
   }
@@ -18249,7 +18250,7 @@ class WebrtcProvider extends observable_Observable {
     /**
      * @type {PromiseLike<CryptoKey | null>}
      */
-    this.key = password ? deriveKey(password, roomName) : /** @type {PromiseLike<null>} */resolve(null);
+    this.key = password ? deriveKey(password, roomName) : ( /** @type {PromiseLike<null>} */resolve(null));
     /**
      * @type {Room|null}
      */
@@ -21489,10 +21490,7 @@ function getEntitiesByKind(state, kind) {
  *
  * @return Array of entities with config matching kind.
  */
-function getEntitiesConfig(state, kind) {
-  return state.entities.config.filter(entity => entity.kind === kind);
-}
-
+const getEntitiesConfig = rememo((state, kind) => state.entities.config.filter(entity => entity.kind === kind), (state, kind) => state.entities.config);
 /**
  * Returns the entity config given its kind and name.
  *
@@ -22407,8 +22405,19 @@ const getRevision = rememo((state, kind, name, recordKey, revisionKey, query) =>
 
 ;// CONCATENATED MODULE: ./packages/core-data/build-module/private-selectors.js
 /**
+ * External dependencies
+ */
+
+
+/**
+ * WordPress dependencies
+ */
+
+
+/**
  * Internal dependencies
  */
+
 
 /**
  * Returns the previous edit from the current undo offset
@@ -22431,6 +22440,9 @@ function getUndoManager(state) {
 function getNavigationFallbackId(state) {
   return state.navigationFallbackId;
 }
+const getBlockPatternsForPostType = (0,external_wp_data_namespaceObject.createRegistrySelector)(select => rememo((state, postType) => select(STORE_NAME).getBlockPatterns().filter(({
+  postTypes
+}) => !postTypes || Array.isArray(postTypes) && postTypes.includes(postType)), () => [select(STORE_NAME).getBlockPatterns()]));
 
 ;// CONCATENATED MODULE: ./node_modules/camel-case/dist.es2015/index.js
 
@@ -22593,7 +22605,6 @@ const fetchLinkSuggestions = async (search, searchOptions = {}, settings = {}) =
     }).catch(() => []) // Fail by returning no results.
     );
   }
-
   if (!type || type === 'term') {
     queries.push(external_wp_apiFetch_default()({
       path: (0,external_wp_url_namespaceObject.addQueryArgs)('/wp/v2/search', {
@@ -22616,7 +22627,6 @@ const fetchLinkSuggestions = async (search, searchOptions = {}, settings = {}) =
     }).catch(() => []) // Fail by returning no results.
     );
   }
-
   if (!disablePostFormats && (!type || type === 'post-format')) {
     queries.push(external_wp_apiFetch_default()({
       path: (0,external_wp_url_namespaceObject.addQueryArgs)('/wp/v2/search', {
@@ -22639,7 +22649,6 @@ const fetchLinkSuggestions = async (search, searchOptions = {}, settings = {}) =
     }).catch(() => []) // Fail by returning no results.
     );
   }
-
   if (!type || type === 'attachment') {
     queries.push(external_wp_apiFetch_default()({
       path: (0,external_wp_url_namespaceObject.addQueryArgs)('/wp/v2/media', {
@@ -22659,7 +22668,6 @@ const fetchLinkSuggestions = async (search, searchOptions = {}, settings = {}) =
     }).catch(() => []) // Fail by returning no results.
     );
   }
-
   return Promise.all(queries).then(results => {
     return results.reduce(( /** @type {WPLinkSearchResult[]} */accumulator, current) => accumulator.concat(current),
     // Flatten list.
@@ -23314,27 +23322,12 @@ const resolvers_getUserPatternCategories = () => async ({
   });
 };
 const resolvers_getNavigationFallbackId = () => async ({
-  dispatch,
-  select
+  dispatch
 }) => {
   const fallback = await external_wp_apiFetch_default()({
-    path: (0,external_wp_url_namespaceObject.addQueryArgs)('/wp-block-editor/v1/navigation-fallback', {
-      _embed: true
-    })
+    path: (0,external_wp_url_namespaceObject.addQueryArgs)('/wp-block-editor/v1/navigation-fallback')
   });
-  const record = fallback?._embedded?.self;
   dispatch.receiveNavigationFallbackId(fallback?.id);
-  if (record) {
-    // If the fallback is already in the store, don't invalidate navigation queries.
-    // Otherwise, invalidate the cache for the scenario where there were no Navigation
-    // posts in the state and the fallback created one.
-    const existingFallbackEntityRecord = select.getEntityRecord('postType', 'wp_navigation', fallback?.id);
-    const invalidateNavigationQueries = !existingFallbackEntityRecord;
-    dispatch.receiveEntityRecords('postType', 'wp_navigation', record, undefined, invalidateNavigationQueries);
-
-    // Resolve to avoid further network requests.
-    dispatch.finishResolution('getEntityRecord', ['postType', 'wp_navigation', fallback?.id]);
-  }
 };
 const resolvers_getDefaultTemplateId = query => async ({
   dispatch
@@ -23868,7 +23861,7 @@ function updateFootnotesFromMeta(blocks, meta) {
       if (typeof value !== 'string' && !(value instanceof external_wp_richText_namespaceObject.RichTextData)) {
         continue;
       }
-      const richTextValue = typeof value === 'string' ? external_wp_richText_namespaceObject.RichTextData.fromHTMLString(value) : value;
+      const richTextValue = typeof value === 'string' ? external_wp_richText_namespaceObject.RichTextData.fromHTMLString(value) : new external_wp_richText_namespaceObject.RichTextData(value);
       richTextValue.replacements.forEach(replacement => {
         if (replacement.type === 'core/footnote') {
           const id = replacement.attributes['data-fn'];
@@ -24055,6 +24048,7 @@ function useEntityProp(kind, name, prop, _id) {
   }, [editEntityRecord, kind, name, id, prop]);
   return [value, setValue, fullValue];
 }
+const parsedBlocksCache = new WeakMap();
 
 /**
  * Hook that returns block content getters and setters for
@@ -24079,6 +24073,10 @@ function useEntityBlockEditor(kind, name, {
 } = {}) {
   const providerId = useEntityId(kind, name);
   const id = _id !== null && _id !== void 0 ? _id : providerId;
+  const {
+    getEntityRecord,
+    getEntityRecordEdits
+  } = (0,external_wp_data_namespaceObject.useSelect)(STORE_NAME);
   const {
     content,
     editedBlocks,
@@ -24108,8 +24106,22 @@ function useEntityBlockEditor(kind, name, {
     if (editedBlocks) {
       return editedBlocks;
     }
-    return content && typeof content !== 'function' ? (0,external_wp_blocks_namespaceObject.parse)(content) : EMPTY_ARRAY;
-  }, [id, editedBlocks, content]);
+    if (!content || typeof content !== 'string') {
+      return EMPTY_ARRAY;
+    }
+
+    // If there's an edit, cache the parsed blocks by the edit.
+    // If not, cache by the original enity record.
+    const edits = getEntityRecordEdits(kind, name, id);
+    const isUnedited = !edits || !Object.keys(edits).length;
+    const cackeKey = isUnedited ? getEntityRecord(kind, name, id) : edits;
+    let _blocks = parsedBlocksCache.get(cackeKey);
+    if (!_blocks) {
+      _blocks = (0,external_wp_blocks_namespaceObject.parse)(content);
+      parsedBlocksCache.set(cackeKey, _blocks);
+    }
+    return _blocks;
+  }, [kind, name, id, editedBlocks, content, getEntityRecord, getEntityRecordEdits]);
   const updateFootnotes = (0,external_wp_element_namespaceObject.useCallback)(_blocks => updateFootnotesFromMeta(_blocks, meta), [meta]);
   const onChange = (0,external_wp_element_namespaceObject.useCallback)((newBlocks, options) => {
     const noChange = blocks === newBlocks;
