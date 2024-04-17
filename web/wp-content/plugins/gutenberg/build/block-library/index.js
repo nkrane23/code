@@ -3162,6 +3162,79 @@ const getMergedAttributesWithPreview = (currentAttributes, preview, title, isRes
   };
 };
 
+;// CONCATENATED MODULE: ./packages/block-library/build-module/utils/hooks.js
+/**
+ * WordPress dependencies
+ */
+
+
+
+
+
+
+/**
+ * Returns whether the current user can edit the given entity.
+ *
+ * @param {string} kind     Entity kind.
+ * @param {string} name     Entity name.
+ * @param {string} recordId Record's id.
+ */
+function useCanEditEntity(kind, name, recordId) {
+  return (0,external_wp_data_namespaceObject.useSelect)(select => select(external_wp_coreData_namespaceObject.store).canUserEditEntityRecord(kind, name, recordId), [kind, name, recordId]);
+}
+
+/**
+ * Handles uploading a media file from a blob URL on mount.
+ *
+ * @param {Object}   args              Upload media arguments.
+ * @param {string}   args.url          Blob URL.
+ * @param {?Array}   args.allowedTypes Array of allowed media types.
+ * @param {Function} args.onChange     Function called when the media is uploaded.
+ * @param {Function} args.onError      Function called when an error happens.
+ */
+function useUploadMediaFromBlobURL(args = {}) {
+  const latestArgs = (0,external_wp_element_namespaceObject.useRef)(args);
+  const {
+    getSettings
+  } = (0,external_wp_data_namespaceObject.useSelect)(external_wp_blockEditor_namespaceObject.store);
+  (0,external_wp_element_namespaceObject.useLayoutEffect)(() => {
+    latestArgs.current = args;
+  });
+  (0,external_wp_element_namespaceObject.useEffect)(() => {
+    if (!latestArgs.current.url || !(0,external_wp_blob_namespaceObject.isBlobURL)(latestArgs.current.url)) {
+      return;
+    }
+    const file = (0,external_wp_blob_namespaceObject.getBlobByURL)(latestArgs.current.url);
+    if (!file) {
+      return;
+    }
+    const {
+      url,
+      allowedTypes,
+      onChange,
+      onError
+    } = latestArgs.current;
+    const {
+      mediaUpload
+    } = getSettings();
+    mediaUpload({
+      filesList: [file],
+      allowedTypes,
+      onFileChange: ([media]) => {
+        if ((0,external_wp_blob_namespaceObject.isBlobURL)(media?.url)) {
+          return;
+        }
+        (0,external_wp_blob_namespaceObject.revokeBlobURL)(url);
+        onChange(media);
+      },
+      onError: message => {
+        (0,external_wp_blob_namespaceObject.revokeBlobURL)(url);
+        onError(message);
+      }
+    });
+  }, [getSettings]);
+}
+
 ;// CONCATENATED MODULE: external ["wp","compose"]
 const external_wp_compose_namespaceObject = window["wp"]["compose"];
 ;// CONCATENATED MODULE: ./packages/icons/build-module/library/caption.js
@@ -3197,8 +3270,13 @@ const caption = (0,external_React_namespaceObject.createElement)(external_wp_pri
 
 
 
+
+/**
+ * Internal dependencies
+ */
+
 function Caption({
-  key = 'caption',
+  attributeKey = 'caption',
   attributes,
   setAttributes,
   isSelected,
@@ -3206,12 +3284,21 @@ function Caption({
   placeholder = (0,external_wp_i18n_namespaceObject.__)('Add caption'),
   label = (0,external_wp_i18n_namespaceObject.__)('Caption text'),
   showToolbarButton = true,
-  className
+  className,
+  readOnly,
+  tagName = 'figcaption',
+  addLabel = (0,external_wp_i18n_namespaceObject.__)('Add caption'),
+  removeLabel = (0,external_wp_i18n_namespaceObject.__)('Remove caption'),
+  icon = library_caption,
+  ...props
 }) {
-  const caption = attributes[key];
+  const caption = attributes[attributeKey];
   const prevCaption = (0,external_wp_compose_namespaceObject.usePrevious)(caption);
-  const isCaptionEmpty = external_wp_blockEditor_namespaceObject.RichText.isEmpty(caption);
-  const isPrevCaptionEmpty = external_wp_blockEditor_namespaceObject.RichText.isEmpty(prevCaption);
+  const {
+    PrivateRichText: RichText
+  } = unlock(external_wp_blockEditor_namespaceObject.privateApis);
+  const isCaptionEmpty = RichText.isEmpty(caption);
+  const isPrevCaptionEmpty = RichText.isEmpty(prevCaption);
   const [showCaption, setShowCaption] = (0,external_wp_element_namespaceObject.useState)(!isCaptionEmpty);
 
   // We need to show the caption when changes come from
@@ -3240,26 +3327,28 @@ function Caption({
       setShowCaption(!showCaption);
       if (showCaption && caption) {
         setAttributes({
-          caption: undefined
+          [attributeKey]: undefined
         });
       }
     },
-    icon: library_caption,
+    icon: icon,
     isPressed: showCaption,
-    label: showCaption ? (0,external_wp_i18n_namespaceObject.__)('Remove caption') : (0,external_wp_i18n_namespaceObject.__)('Add caption')
-  })), showCaption && (!external_wp_blockEditor_namespaceObject.RichText.isEmpty(caption) || isSelected) && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
-    identifier: key,
-    tagName: "figcaption",
+    label: showCaption ? removeLabel : addLabel
+  })), showCaption && (!RichText.isEmpty(caption) || isSelected) && (0,external_React_namespaceObject.createElement)(RichText, {
+    identifier: attributeKey,
+    tagName: tagName,
     className: classnames_default()(className, (0,external_wp_blockEditor_namespaceObject.__experimentalGetElementClassName)('caption')),
     ref: ref,
     "aria-label": label,
     placeholder: placeholder,
     value: caption,
     onChange: value => setAttributes({
-      caption: value
+      [attributeKey]: value
     }),
     inlineToolbar: true,
-    __unstableOnSplitAtEnd: () => insertBlocksAfter((0,external_wp_blocks_namespaceObject.createBlock)((0,external_wp_blocks_namespaceObject.getDefaultBlockName)()))
+    __unstableOnSplitAtEnd: () => insertBlocksAfter((0,external_wp_blocks_namespaceObject.createBlock)((0,external_wp_blocks_namespaceObject.getDefaultBlockName)())),
+    readOnly: readOnly,
+    ...props
   }));
 }
 
@@ -3281,10 +3370,10 @@ function Caption({
 
 
 
-
 /**
  * Internal dependencies
  */
+
 
 
 const ALLOWED_MEDIA_TYPES = ['audio'];
@@ -3304,22 +3393,12 @@ function AudioEdit({
     src
   } = attributes;
   const isTemporaryAudio = !id && (0,external_wp_blob_namespaceObject.isBlobURL)(src);
-  const {
-    getSettings
-  } = (0,external_wp_data_namespaceObject.useSelect)(external_wp_blockEditor_namespaceObject.store);
-  (0,external_wp_element_namespaceObject.useEffect)(() => {
-    if (!id && (0,external_wp_blob_namespaceObject.isBlobURL)(src)) {
-      const file = (0,external_wp_blob_namespaceObject.getBlobByURL)(src);
-      if (file) {
-        getSettings().mediaUpload({
-          filesList: [file],
-          onFileChange: ([media]) => onSelectAudio(media),
-          onError: e => onUploadError(e),
-          allowedTypes: ALLOWED_MEDIA_TYPES
-        });
-      }
-    }
-  }, []);
+  useUploadMediaFromBlobURL({
+    url: src,
+    allowedTypes: ALLOWED_MEDIA_TYPES,
+    onChange: onSelectAudio,
+    onError: onUploadError
+  });
   function toggleAttribute(attribute) {
     return newValue => {
       setAttributes({
@@ -4975,7 +5054,7 @@ function WidthPanel({
     });
   }
   return (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.PanelBody, {
-    title: (0,external_wp_i18n_namespaceObject.__)('Width settings')
+    title: (0,external_wp_i18n_namespaceObject.__)('Settings')
   }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ButtonGroup, {
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('Button width')
   }, [25, 50, 75, 100].map(widthValue => {
@@ -5074,7 +5153,7 @@ function ButtonEdit(props) {
     if (!isSelected) {
       return {};
     }
-    const blockBindingsSource = unlock(select(external_wp_blockEditor_namespaceObject.store)).getBlockBindingsSource(metadata?.bindings?.url?.source);
+    const blockBindingsSource = unlock(select(external_wp_blocks_namespaceObject.store)).getBlockBindingsSource(metadata?.bindings?.url?.source);
     return {
       lockUrlControls: !!metadata?.bindings?.url && (!blockBindingsSource || blockBindingsSource?.lockAttributesEditing)
     };
@@ -5560,11 +5639,68 @@ const buttons_deprecated_deprecated = [{
 
 ;// CONCATENATED MODULE: external ["wp","richText"]
 const external_wp_richText_namespaceObject = window["wp"]["richText"];
+;// CONCATENATED MODULE: ./packages/block-library/build-module/utils/get-transformed-metadata.js
+/**
+ * WordPress dependencies
+ */
+
+
+/**
+ * Transform the metadata attribute with only the values and bindings specified by each transform.
+ * Returns `undefined` if the input metadata is falsy.
+ *
+ * @param {Object}   metadata         Original metadata attribute from the block that is being transformed.
+ * @param {Object}   newBlockName     Name of the final block after the transformation.
+ * @param {Function} bindingsCallback Optional callback to transform the `bindings` property object.
+ * @return {Object|undefined} New metadata object only with the relevant properties.
+ */
+function getTransformedMetadata(metadata, newBlockName, bindingsCallback) {
+  if (!metadata) {
+    return;
+  }
+  const {
+    supports
+  } = (0,external_wp_blocks_namespaceObject.getBlockType)(newBlockName);
+  // Fixed until an opt-in mechanism is implemented.
+  const BLOCK_BINDINGS_SUPPORTED_BLOCKS = ['core/paragraph', 'core/heading', 'core/image', 'core/button'];
+  // The metadata properties that should be preserved after the transform.
+  const transformSupportedProps = [];
+  // If it support bindings, and there is a transform bindings callback, add the `id` and `bindings` properties.
+  if (BLOCK_BINDINGS_SUPPORTED_BLOCKS.includes(newBlockName) && bindingsCallback) {
+    transformSupportedProps.push('id', 'bindings');
+  }
+  // If it support block naming (true by default), add the `name` property.
+  if (supports.renaming !== false) {
+    transformSupportedProps.push('name');
+  }
+
+  // Return early if no supported properties.
+  if (!transformSupportedProps.length) {
+    return;
+  }
+  const newMetadata = Object.entries(metadata).reduce((obj, [prop, value]) => {
+    // If prop is not supported, don't add it to the new metadata object.
+    if (!transformSupportedProps.includes(prop)) {
+      return obj;
+    }
+    obj[prop] = prop === 'bindings' ? bindingsCallback(value) : value;
+    return obj;
+  }, {});
+
+  // Return undefined if object is empty.
+  return Object.keys(newMetadata).length ? newMetadata : undefined;
+}
+
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/buttons/transforms.js
 /**
  * WordPress dependencies
  */
 
+
+
+/**
+ * Internal dependencies
+ */
 
 const transforms_transforms = {
   from: [{
@@ -5587,7 +5723,11 @@ const transforms_transforms = {
     (0,external_wp_blocks_namespaceObject.createBlock)('core/buttons', {},
     // Loop the selected buttons.
     buttons.map(attributes => {
-      const element = (0,external_wp_richText_namespaceObject.__unstableCreateElement)(document, attributes.content);
+      const {
+        content,
+        metadata
+      } = attributes;
+      const element = (0,external_wp_richText_namespaceObject.__unstableCreateElement)(document, content);
       // Remove any HTML tags.
       const text = element.innerText || '';
       // Get first url.
@@ -5596,7 +5736,12 @@ const transforms_transforms = {
       // Create singular button in the buttons block.
       return (0,external_wp_blocks_namespaceObject.createBlock)('core/button', {
         text,
-        url
+        url,
+        metadata: getTransformedMetadata(metadata, 'core/button', ({
+          content: contentBinding
+        }) => ({
+          text: contentBinding
+        }))
       });
     })),
     isMatch: paragraphs => {
@@ -6842,7 +6987,9 @@ function code_save_save({
     // prevent embedding in PHP. Ideally checks for the code block,
     // or pre/code tags, should be made on the PHP side?
     ,
-    value: utils_escape(attributes.content.toString())
+    value: utils_escape(typeof attributes.content === 'string' ? attributes.content : attributes.content.toHTMLString({
+      preserveWhiteSpace: true
+    }))
   }));
 }
 
@@ -6851,6 +6998,11 @@ function code_save_save({
  * WordPress dependencies
  */
 
+
+
+/**
+ * Internal dependencies
+ */
 
 const code_transforms_transforms = {
   from: [{
@@ -6861,15 +7013,18 @@ const code_transforms_transforms = {
     type: 'block',
     blocks: ['core/paragraph'],
     transform: ({
-      content
+      content,
+      metadata
     }) => (0,external_wp_blocks_namespaceObject.createBlock)('core/code', {
-      content
+      content,
+      metadata: getTransformedMetadata(metadata, 'core/code')
     })
   }, {
     type: 'block',
     blocks: ['core/html'],
     transform: ({
-      content: text
+      content: text,
+      metadata
     }) => {
       return (0,external_wp_blocks_namespaceObject.createBlock)('core/code', {
         // The HTML is plain text (with plain line breaks), so
@@ -6878,7 +7033,8 @@ const code_transforms_transforms = {
           value: (0,external_wp_richText_namespaceObject.create)({
             text
           })
-        })
+        }),
+        metadata: getTransformedMetadata(metadata, 'core/code')
       });
     }
   }, {
@@ -6900,9 +7056,11 @@ const code_transforms_transforms = {
     type: 'block',
     blocks: ['core/paragraph'],
     transform: ({
-      content
+      content,
+      metadata
     }) => (0,external_wp_blocks_namespaceObject.createBlock)('core/paragraph', {
-      content
+      content,
+      metadata: getTransformedMetadata(metadata, 'core/paragraph')
     })
   }]
 };
@@ -7832,12 +7990,13 @@ function ColumnsEditContainer({
       // If adding a new column, assign width to the new column equal to
       // as if it were `1 / columns` of the total available space.
       const newColumnWidth = toWidthPrecision(100 / newColumns);
+      const newlyAddedColumns = newColumns - previousColumns;
 
       // Redistribute in consideration of pending block insertion as
       // constraining the available working width.
-      const widths = getRedistributedColumnWidths(innerBlocks, 100 - newColumnWidth);
+      const widths = getRedistributedColumnWidths(innerBlocks, 100 - newColumnWidth * newlyAddedColumns);
       innerBlocks = [...getMappedColumnWidths(innerBlocks, widths), ...Array.from({
-        length: newColumns - previousColumns
+        length: newlyAddedColumns
       }).map(() => {
         return (0,external_wp_blocks_namespaceObject.createBlock)('core/column', {
           width: `${newColumnWidth}%`
@@ -8933,7 +9092,7 @@ function edit_Edit({
     return __experimentalDiscussionSettings;
   });
   const inspectorControls = (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.PanelBody, {
-    title: (0,external_wp_i18n_namespaceObject.__)('Avatar Settings')
+    title: (0,external_wp_i18n_namespaceObject.__)('Settings')
   }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.RangeControl, {
     __nextHasNoMarginBottom: true,
     __next40pxDefaultSize: true,
@@ -13212,6 +13371,10 @@ function CoverInspectorControls({
  * Internal dependencies
  */
 
+
+const {
+  cleanEmptyObject: block_controls_cleanEmptyObject
+} = unlock(external_wp_blockEditor_namespaceObject.privateApis);
 function CoverBlockControls({
   attributes,
   setAttributes,
@@ -13232,7 +13395,7 @@ function CoverBlockControls({
   } = currentSettings;
   const [prevMinHeightValue, setPrevMinHeightValue] = (0,external_wp_element_namespaceObject.useState)(minHeight);
   const [prevMinHeightUnit, setPrevMinHeightUnit] = (0,external_wp_element_namespaceObject.useState)(minHeightUnit);
-  const isMinFullHeight = minHeightUnit === 'vh' && minHeight === 100;
+  const isMinFullHeight = minHeightUnit === 'vh' && minHeight === 100 && !attributes?.style?.dimensions?.aspectRatio;
   const toggleMinFullHeight = () => {
     if (isMinFullHeight) {
       // If there aren't previous values, take the default ones.
@@ -13252,10 +13415,17 @@ function CoverBlockControls({
     setPrevMinHeightValue(minHeight);
     setPrevMinHeightUnit(minHeightUnit);
 
-    // Set full height.
+    // Set full height, and clear any aspect ratio value.
     return setAttributes({
       minHeight: 100,
-      minHeightUnit: 'vh'
+      minHeightUnit: 'vh',
+      style: block_controls_cleanEmptyObject({
+        ...attributes?.style,
+        dimensions: {
+          ...attributes?.style?.dimensions,
+          aspectRatio: undefined // Reset aspect ratio when minHeight is set.
+        }
+      })
     });
   };
   return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
@@ -13367,11 +13537,6 @@ function ResizableCoverPopover({
   ...props
 }) {
   const [isResizing, setIsResizing] = (0,external_wp_element_namespaceObject.useState)(false);
-  const dimensions = (0,external_wp_element_namespaceObject.useMemo)(() => ({
-    height,
-    minHeight,
-    width
-  }), [minHeight, height, width]);
   const resizableBoxProps = {
     className: classnames_default()(className, {
       'is-resizing': isResizing
@@ -13402,7 +13567,6 @@ function ResizableCoverPopover({
   };
   return (0,external_React_namespaceObject.createElement)(ResizableBoxPopover, {
     className: "block-library-cover__resizable-box-popover",
-    __unstableRefreshSize: dimensions,
     resizableBoxProps: resizableBoxProps,
     ...props
   });
@@ -14402,6 +14566,7 @@ function CoverEdit({
     'is-repeated': isRepeated,
     'has-custom-content-position': !isContentPositionCenter(contentPosition)
   }, getPositionClassName(contentPosition));
+  const showOverlay = url || !useFeaturedImage || useFeaturedImage && !url;
   return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, blockControls, inspectorControls, (0,external_React_namespaceObject.createElement)(TagName, {
     ...blockProps,
     className: classnames_default()(classes, blockProps.className),
@@ -14410,7 +14575,7 @@ function CoverEdit({
       ...blockProps.style
     },
     "data-url": url
-  }, resizeListener, (!useFeaturedImage || url) && (0,external_React_namespaceObject.createElement)("span", {
+  }, resizeListener, showOverlay && (0,external_React_namespaceObject.createElement)("span", {
     "aria-hidden": "true",
     className: classnames_default()('wp-block-cover__background', dimRatioToClass(dimRatio), {
       [overlayColor.class]: overlayColor.class,
@@ -15124,6 +15289,7 @@ function DetailsEdit({
   }, (0,external_React_namespaceObject.createElement)("summary", {
     onClick: event => event.preventDefault()
   }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+    identifier: "summary",
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('Write summary'),
     placeholder: (0,external_wp_i18n_namespaceObject.__)('Write summary…'),
     allowedFormats: [],
@@ -17257,6 +17423,7 @@ const createActiveXObject = type => {
 
 
 
+
 const MIN_PREVIEW_HEIGHT = 200;
 const MAX_PREVIEW_HEIGHT = 2000;
 function ClipboardToolbarButton({
@@ -17296,9 +17463,6 @@ function FileEdit({
     previewHeight
   } = attributes;
   const {
-    getSettings
-  } = (0,external_wp_data_namespaceObject.useSelect)(external_wp_blockEditor_namespaceObject.store);
-  const {
     media
   } = (0,external_wp_data_namespaceObject.useSelect)(select => ({
     media: id === undefined ? undefined : select(external_wp_coreData_namespaceObject.store).getMedia(id)
@@ -17309,17 +17473,12 @@ function FileEdit({
   const {
     toggleSelection
   } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_blockEditor_namespaceObject.store);
+  useUploadMediaFromBlobURL({
+    url: href,
+    onChange: onSelectFile,
+    onError: onUploadError
+  });
   (0,external_wp_element_namespaceObject.useEffect)(() => {
-    // Upload a file drag-and-dropped into the editor.
-    if ((0,external_wp_blob_namespaceObject.isBlobURL)(href)) {
-      const file = (0,external_wp_blob_namespaceObject.getBlobByURL)(href);
-      getSettings().mediaUpload({
-        filesList: [file],
-        onFileChange: ([newMedia]) => onSelectFile(newMedia),
-        onError: onUploadError
-      });
-      (0,external_wp_blob_namespaceObject.revokeBlobURL)(href);
-    }
     if (external_wp_blockEditor_namespaceObject.RichText.isEmpty(downloadButtonText)) {
       setAttributes({
         downloadButtonText: (0,external_wp_i18n_namespaceObject._x)('Download', 'button label')
@@ -17467,6 +17626,7 @@ function FileEdit({
   })), (0,external_React_namespaceObject.createElement)("div", {
     className: 'wp-block-file__content-wrapper'
   }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+    identifier: "fileName",
     tagName: "a",
     value: fileName,
     placeholder: (0,external_wp_i18n_namespaceObject.__)('Write file name…'),
@@ -17478,6 +17638,7 @@ function FileEdit({
   }), showDownloadButton && (0,external_React_namespaceObject.createElement)("div", {
     className: 'wp-block-file__button-richtext-wrapper'
   }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+    identifier: "downloadButtonText",
     tagName: "div" // Must be block-level or else cursor disappears.
     ,
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('Download button text'),
@@ -18352,7 +18513,7 @@ function InputFieldBlock({
     ref.current.focus();
   }
   const controls = (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, 'hidden' !== type && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.PanelBody, {
-    title: (0,external_wp_i18n_namespaceObject.__)('Input settings')
+    title: (0,external_wp_i18n_namespaceObject.__)('Settings')
   }, 'checkbox' !== type && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.CheckboxControl, {
     label: (0,external_wp_i18n_namespaceObject.__)('Inline label'),
     checked: inlineLabel,
@@ -23812,6 +23973,7 @@ function getLevelFromHeadingNodeName(nodeName) {
  * Internal dependencies
  */
 
+
 const heading_transforms_transforms = {
   from: [{
     type: 'block',
@@ -23820,11 +23982,17 @@ const heading_transforms_transforms = {
     transform: attributes => attributes.map(({
       content,
       anchor,
-      align: textAlign
+      align: textAlign,
+      metadata
     }) => (0,external_wp_blocks_namespaceObject.createBlock)('core/heading', {
       content,
       anchor,
-      textAlign
+      textAlign,
+      metadata: getTransformedMetadata(metadata, 'core/heading', ({
+        content: contentBinding
+      }) => ({
+        content: contentBinding
+      }))
     }))
   }, {
     type: 'raw',
@@ -23879,10 +24047,16 @@ const heading_transforms_transforms = {
     blocks: ['core/paragraph'],
     transform: attributes => attributes.map(({
       content,
-      textAlign: align
+      textAlign: align,
+      metadata
     }) => (0,external_wp_blocks_namespaceObject.createBlock)('core/paragraph', {
       content,
-      align
+      align,
+      metadata: getTransformedMetadata(metadata, 'core/paragraph', ({
+        content: contentBinding
+      }) => ({
+        content: contentBinding
+      }))
     }))
   }]
 };
@@ -23993,14 +24167,15 @@ const heading_settings = {
       level
     } = attributes;
     const customName = attributes?.metadata?.name;
+    const hasContent = content?.trim().length > 0;
 
     // In the list view, use the block's content as the label.
     // If the content is empty, fall back to the default label.
-    if (context === 'list-view' && (customName || content)) {
-      return attributes?.metadata?.name || content;
+    if (context === 'list-view' && (customName || hasContent)) {
+      return customName || content;
     }
     if (context === 'accessibility') {
-      return !content || content.length === 0 ? (0,external_wp_i18n_namespaceObject.sprintf)( /* translators: accessibility text. %s: heading level. */
+      return !hasContent ? (0,external_wp_i18n_namespaceObject.sprintf)( /* translators: accessibility text. %s: heading level. */
       (0,external_wp_i18n_namespaceObject.__)('Level %s. Empty.'), level) : (0,external_wp_i18n_namespaceObject.sprintf)( /* translators: accessibility text. 1: heading level. 2: heading content. */
       (0,external_wp_i18n_namespaceObject.__)('Level %1$s. %2$s'), level, content);
     }
@@ -25661,8 +25836,7 @@ const ImageWrapper = ({
       // When the Image block is linked,
       // it's wrapped with a disabled <a /> tag.
       // Restore cursor style so it doesn't appear 'clickable'
-      // and remove pointer events. Safari needs the display property.
-      pointerEvents: 'none',
+      // Safari needs the display property.
       cursor: 'default',
       display: 'inline'
     }
@@ -25835,6 +26009,23 @@ function image_Image({
       });
     }
   }
+  function resetLightbox() {
+    // When deleting a link from an image while lightbox settings
+    // are enabled by default, we should disable the lightbox,
+    // otherwise the resulting UX looks like a mistake.
+    // See https://github.com/WordPress/gutenberg/pull/59890/files#r1532286123.
+    if (lightboxSetting?.enabled && lightboxSetting?.allowEditing) {
+      setAttributes({
+        lightbox: {
+          enabled: false
+        }
+      });
+    } else {
+      setAttributes({
+        lightbox: undefined
+      });
+    }
+  }
   function onSetTitle(value) {
     // This is the HTML title attribute, separate from the media object
     // title.
@@ -25902,7 +26093,10 @@ function image_Image({
     availableUnits: ['px']
   });
   const [lightboxSetting] = (0,external_wp_blockEditor_namespaceObject.useSettings)('lightbox');
-  const showLightboxSetting = !!lightbox || lightboxSetting?.allowEditing === true;
+  const showLightboxSetting =
+  // If a block-level override is set, we should give users the option to
+  // remove that override, even if the lightbox UI is disabled in the settings.
+  !!lightbox && lightbox?.enabled !== lightboxSetting?.enabled || lightboxSetting?.allowEditing;
   const lightboxChecked = !!lightbox?.enabled || !lightbox && !!lightboxSetting?.enabled;
   const dimensionsControl = (0,external_React_namespaceObject.createElement)(DimensionsTool, {
     value: {
@@ -25955,13 +26149,18 @@ function image_Image({
     lockUrlControls = false,
     lockHrefControls = false,
     lockAltControls = false,
-    lockTitleControls = false
+    lockAltControlsMessage,
+    lockTitleControls = false,
+    lockTitleControlsMessage,
+    lockCaption = false
   } = (0,external_wp_data_namespaceObject.useSelect)(select => {
     if (!isSingleSelected) {
       return {};
     }
     const {
-      getBlockBindingsSource,
+      getBlockBindingsSource
+    } = unlock(select(external_wp_blocks_namespaceObject.store));
+    const {
       getBlockParentsByBlockName
     } = unlock(select(external_wp_blockEditor_namespaceObject.store));
     const {
@@ -25979,8 +26178,16 @@ function image_Image({
       // Disable editing the link of the URL if the image is inside a pattern instance.
       // This is a temporary solution until we support overriding the link on the frontend.
       hasParentPattern,
+      lockCaption:
+      // Disable editing the caption if the image is inside a pattern instance.
+      // This is a temporary solution until we support overriding the caption on the frontend.
+      hasParentPattern,
       lockAltControls: !!altBinding && (!altBindingSource || altBindingSource?.lockAttributesEditing),
-      lockTitleControls: !!titleBinding && (!titleBindingSource || titleBindingSource?.lockAttributesEditing)
+      lockAltControlsMessage: altBindingSource?.label ? (0,external_wp_i18n_namespaceObject.sprintf)( /* translators: %s: Label of the bindings source. */
+      (0,external_wp_i18n_namespaceObject.__)('Connected to %s'), altBindingSource.label) : (0,external_wp_i18n_namespaceObject.__)('Connected to dynamic data'),
+      lockTitleControls: !!titleBinding && (!titleBindingSource || titleBindingSource?.lockAttributesEditing),
+      lockTitleControlsMessage: titleBindingSource?.label ? (0,external_wp_i18n_namespaceObject.sprintf)( /* translators: %s: Label of the bindings source. */
+      (0,external_wp_i18n_namespaceObject.__)('Connected to %s'), titleBindingSource.label) : (0,external_wp_i18n_namespaceObject.__)('Connected to dynamic data')
     };
   }, [clientId, isSingleSelected, metadata?.bindings]);
   const controls = (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
@@ -25996,7 +26203,8 @@ function image_Image({
     rel: rel,
     showLightboxSetting: showLightboxSetting,
     lightboxEnabled: lightboxChecked,
-    onSetLightbox: onSetLightbox
+    onSetLightbox: onSetLightbox,
+    resetLightbox: resetLightbox
   }), allowCrop && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ToolbarButton, {
     onClick: () => setIsEditingImage(true),
     icon: library_crop,
@@ -26049,7 +26257,7 @@ function image_Image({
       value: alt || '',
       onChange: updateAlt,
       disabled: lockAltControls,
-      help: lockAltControls ? (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_wp_i18n_namespaceObject.__)('Connected to a custom field')) : (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ExternalLink, {
+      help: lockAltControls ? (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, lockAltControlsMessage) : (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ExternalLink, {
         href: "https://www.w3.org/WAI/tutorials/images/decision-tree"
       }, (0,external_wp_i18n_namespaceObject.__)('Describe the purpose of the image.')), (0,external_React_namespaceObject.createElement)("br", null), (0,external_wp_i18n_namespaceObject.__)('Leave empty if decorative.')),
       __nextHasNoMarginBottom: true
@@ -26079,7 +26287,7 @@ function image_Image({
       value: title || '',
       onChange: onSetTitle,
       disabled: lockTitleControls,
-      help: lockTitleControls ? (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_wp_i18n_namespaceObject.__)('Connected to a custom field')) : (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_wp_i18n_namespaceObject.__)('Describe the role of this image on the page.'), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ExternalLink, {
+      help: lockTitleControls ? (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, lockTitleControlsMessage) : (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_wp_i18n_namespaceObject.__)('Describe the role of this image on the page.'), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ExternalLink, {
         href: "https://www.w3.org/TR/html52/dom.html#the-title-attribute"
       }, (0,external_wp_i18n_namespaceObject.__)('(Note: many devices and browsers do not display this text.)')))
     })
@@ -26099,7 +26307,7 @@ function image_Image({
     value: alt || '',
     onChange: updateAlt,
     readOnly: lockAltControls,
-    help: lockAltControls ? (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_wp_i18n_namespaceObject.__)('Connected to a custom field')) : (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ExternalLink, {
+    help: lockAltControls ? (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, lockAltControlsMessage) : (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ExternalLink, {
       href: "https://www.w3.org/WAI/tutorials/images/decision-tree"
     }, (0,external_wp_i18n_namespaceObject.__)('Describe the purpose of the image.')), (0,external_React_namespaceObject.createElement)("br", null), (0,external_wp_i18n_namespaceObject.__)('Leave empty if decorative.')),
     __nextHasNoMarginBottom: true
@@ -26111,11 +26319,12 @@ function image_Image({
     group: "advanced"
   }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
     __nextHasNoMarginBottom: true,
+    __next40pxDefaultSize: true,
     label: (0,external_wp_i18n_namespaceObject.__)('Title attribute'),
     value: title || '',
     onChange: onSetTitle,
     readOnly: lockTitleControls,
-    help: lockTitleControls ? (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_wp_i18n_namespaceObject.__)('Connected to a custom field')) : (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_wp_i18n_namespaceObject.__)('Describe the role of this image on the page.'), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ExternalLink, {
+    help: lockTitleControls ? (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, lockTitleControlsMessage) : (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_wp_i18n_namespaceObject.__)('Describe the role of this image on the page.'), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ExternalLink, {
       href: "https://www.w3.org/TR/html52/dom.html#the-title-attribute"
     }, (0,external_wp_i18n_namespaceObject.__)('(Note: many devices and browsers do not display this text.)')))
   })));
@@ -26280,13 +26489,14 @@ function image_Image({
     // Add all controls if the image attributes are connected.
     return metadata?.bindings ? controls : sizeControls;
   }
-  return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, !temporaryURL && controls, img, (0,external_React_namespaceObject.createElement)(Caption, {
+  return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, controls, img, (0,external_React_namespaceObject.createElement)(Caption, {
     attributes: attributes,
     setAttributes: setAttributes,
     isSelected: isSingleSelected,
     insertBlocksAfter: insertBlocksAfter,
     label: (0,external_wp_i18n_namespaceObject.__)('Image caption text'),
-    showToolbarButton: isSingleSelected && hasNonContentControls
+    showToolbarButton: isSingleSelected && hasNonContentControls,
+    readOnly: lockCaption
   }));
 }
 
@@ -26309,9 +26519,11 @@ function image_Image({
 
 
 
+
 /**
  * Internal dependencies
  */
+
 
 
 
@@ -26383,7 +26595,9 @@ function ImageEdit({
     align,
     metadata
   } = attributes;
-  const [temporaryURL, setTemporaryURL] = (0,external_wp_element_namespaceObject.useState)();
+  const [temporaryURL, setTemporaryURL] = (0,external_wp_element_namespaceObject.useState)(() => {
+    return edit_isTemporaryImage(id, url) ? url : undefined;
+  });
   const altRef = (0,external_wp_element_namespaceObject.useRef)();
   (0,external_wp_element_namespaceObject.useEffect)(() => {
     altRef.current = alt;
@@ -26528,44 +26742,12 @@ function ImageEdit({
       });
     }
   }
-  let isTemp = edit_isTemporaryImage(id, url);
-
-  // Upload a temporary image on mount.
-  (0,external_wp_element_namespaceObject.useEffect)(() => {
-    if (!isTemp) {
-      return;
-    }
-    const file = (0,external_wp_blob_namespaceObject.getBlobByURL)(url);
-    if (file) {
-      const {
-        mediaUpload
-      } = getSettings();
-      if (!mediaUpload) {
-        return;
-      }
-      mediaUpload({
-        filesList: [file],
-        onFileChange: ([img]) => {
-          onSelectImage(img);
-        },
-        allowedTypes: constants_ALLOWED_MEDIA_TYPES,
-        onError: message => {
-          isTemp = false;
-          onUploadError(message);
-        }
-      });
-    }
-  }, []);
-
-  // If an image is temporary, revoke the Blob url when it is uploaded (and is
-  // no longer temporary).
-  (0,external_wp_element_namespaceObject.useEffect)(() => {
-    if (isTemp) {
-      setTemporaryURL(url);
-      return;
-    }
-    (0,external_wp_blob_namespaceObject.revokeBlobURL)(temporaryURL);
-  }, [isTemp, url]);
+  useUploadMediaFromBlobURL({
+    url,
+    allowedTypes: constants_ALLOWED_MEDIA_TYPES,
+    onChange: onSelectImage,
+    onError: onUploadError
+  });
   const isExternal = isExternalImage(id, url);
   const src = isExternal ? url : undefined;
   const mediaPreview = !!url && (0,external_React_namespaceObject.createElement)("img", {
@@ -26589,14 +26771,17 @@ function ImageEdit({
 
   // Much of this description is duplicated from MediaPlaceholder.
   const {
-    lockUrlControls = false
+    lockUrlControls = false,
+    lockUrlControlsMessage
   } = (0,external_wp_data_namespaceObject.useSelect)(select => {
     if (!isSingleSelected) {
       return {};
     }
-    const blockBindingsSource = unlock(select(external_wp_blockEditor_namespaceObject.store)).getBlockBindingsSource(metadata?.bindings?.url?.source);
+    const blockBindingsSource = unlock(select(external_wp_blocks_namespaceObject.store)).getBlockBindingsSource(metadata?.bindings?.url?.source);
     return {
-      lockUrlControls: !!metadata?.bindings?.url && (!blockBindingsSource || blockBindingsSource?.lockAttributesEditing)
+      lockUrlControls: !!metadata?.bindings?.url && (!blockBindingsSource || blockBindingsSource?.lockAttributesEditing),
+      lockUrlControlsMessage: blockBindingsSource?.label ? (0,external_wp_i18n_namespaceObject.sprintf)( /* translators: %s: Label of the bindings source. */
+      (0,external_wp_i18n_namespaceObject.__)('Connected to %s'), blockBindingsSource.label) : (0,external_wp_i18n_namespaceObject.__)('Connected to dynamic data')
     };
   }, [isSingleSelected]);
   const placeholder = content => {
@@ -26618,7 +26803,7 @@ function ImageEdit({
       }
     }, lockUrlControls ? (0,external_React_namespaceObject.createElement)("span", {
       className: 'block-bindings-media-placeholder-message'
-    }, (0,external_wp_i18n_namespaceObject.__)('Connected to a custom field')) : content);
+    }, lockUrlControlsMessage) : content);
   };
   return (0,external_React_namespaceObject.createElement)("figure", {
     ...blockProps
@@ -28494,7 +28679,7 @@ const OrderedListSettings = ({
   start,
   type
 }) => (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.PanelBody, {
-  title: (0,external_wp_i18n_namespaceObject.__)('Ordered list settings')
+  title: (0,external_wp_i18n_namespaceObject.__)('Settings')
 }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
   __nextHasNoMarginBottom: true,
   label: (0,external_wp_i18n_namespaceObject.__)('Start value'),
@@ -29113,6 +29298,7 @@ function useIndentListItem(clientId) {
     } else {
       multiSelect(clonedBlocks[0].clientId, clonedBlocks[clonedBlocks.length - 1].clientId);
     }
+    return true;
   }, [clientId]);
 }
 
@@ -29184,39 +29370,7 @@ function useOutdentListItem() {
         removeBlock(parentListId, shouldSelectParent);
       }
     });
-  }, []);
-}
-
-;// CONCATENATED MODULE: ./packages/block-library/build-module/list-item/hooks/use-copy.js
-/**
- * WordPress dependencies
- */
-
-
-
-function useCopy(clientId) {
-  const {
-    getBlockRootClientId,
-    getBlockName,
-    getBlockAttributes
-  } = (0,external_wp_data_namespaceObject.useSelect)(external_wp_blockEditor_namespaceObject.store);
-  return (0,external_wp_compose_namespaceObject.useRefEffect)(node => {
-    function onCopy(event) {
-      // The event propagates through all nested lists, so don't override
-      // when copying nested list items.
-      if (event.clipboardData.getData('__unstableWrapperBlockName')) {
-        return;
-      }
-      const rootClientId = getBlockRootClientId(clientId);
-      event.clipboardData.setData('__unstableWrapperBlockName', getBlockName(rootClientId));
-      event.clipboardData.setData('__unstableWrapperBlockAttributes', JSON.stringify(getBlockAttributes(rootClientId)));
-    }
-    node.addEventListener('copy', onCopy);
-    node.addEventListener('cut', onCopy);
-    return () => {
-      node.removeEventListener('copy', onCopy);
-      node.removeEventListener('cut', onCopy);
-    };
+    return true;
   }, []);
 }
 
@@ -29307,6 +29461,7 @@ function use_enter_useEnter(props) {
  * Internal dependencies
  */
 
+
 function useSpace(clientId) {
   const {
     getSelectionStart,
@@ -29314,6 +29469,7 @@ function useSpace(clientId) {
     getBlockIndex
   } = (0,external_wp_data_namespaceObject.useSelect)(external_wp_blockEditor_namespaceObject.store);
   const indentListItem = useIndentListItem(clientId);
+  const outdentListItem = useOutdentListItem();
   return (0,external_wp_compose_namespaceObject.useRefEffect)(element => {
     function onKeyDown(event) {
       const {
@@ -29323,19 +29479,26 @@ function useSpace(clientId) {
         metaKey,
         ctrlKey
       } = event;
-      if (event.defaultPrevented || keyCode !== external_wp_keycodes_namespaceObject.SPACE ||
+      if (event.defaultPrevented || keyCode !== external_wp_keycodes_namespaceObject.SPACE && keyCode !== external_wp_keycodes_namespaceObject.TAB ||
       // Only override when no modifiers are pressed.
-      shiftKey || altKey || metaKey || ctrlKey) {
-        return;
-      }
-      if (getBlockIndex(clientId) === 0) {
+      altKey || metaKey || ctrlKey) {
         return;
       }
       const selectionStart = getSelectionStart();
       const selectionEnd = getSelectionEnd();
       if (selectionStart.offset === 0 && selectionEnd.offset === 0) {
-        event.preventDefault();
-        indentListItem();
+        if (shiftKey) {
+          // Note that backspace behaviour in defined in onMerge.
+          if (keyCode === external_wp_keycodes_namespaceObject.TAB) {
+            if (outdentListItem()) {
+              event.preventDefault();
+            }
+          }
+        } else if (getBlockIndex(clientId) !== 0) {
+          if (indentListItem()) {
+            event.preventDefault();
+          }
+        }
       }
     }
     element.addEventListener('keydown', onKeyDown);
@@ -29588,9 +29751,7 @@ function ListItemEdit({
     placeholder,
     content
   } = attributes;
-  const blockProps = (0,external_wp_blockEditor_namespaceObject.useBlockProps)({
-    ref: useCopy(clientId)
-  });
+  const blockProps = (0,external_wp_blockEditor_namespaceObject.useBlockProps)();
   const innerBlocksProps = (0,external_wp_blockEditor_namespaceObject.useInnerBlocksProps)(blockProps, {
     renderAppender: false,
     __unstableDisableDropZone: true
@@ -29662,6 +29823,7 @@ const list_item_transforms_transforms = {
  */
 
 
+
 /**
  * Internal dependencies
  */
@@ -29719,6 +29881,7 @@ const list_item_metadata = {
 
 
 
+
 const {
   name: list_item_name
 } = list_item_metadata;
@@ -29733,7 +29896,8 @@ const list_item_settings = {
       content: attributes.content + attributesToMerge.content
     };
   },
-  transforms: list_item_transforms
+  transforms: list_item_transforms,
+  [unlock(external_wp_blockEditor_namespaceObject.privateApis).requiresWrapperOnCopy]: true
 };
 const list_item_init = () => initBlock({
   name: list_item_name,
@@ -30776,22 +30940,28 @@ const ResizableBoxContainer = (0,external_wp_element_namespaceObject.forwardRef)
 function ToolbarEditButton({
   mediaId,
   mediaUrl,
-  onSelectMedia
+  onSelectMedia,
+  toggleUseFeaturedImage,
+  useFeaturedImage,
+  featuredImageURL
 }) {
   return (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
     group: "other"
   }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.MediaReplaceFlow, {
     mediaId: mediaId,
-    mediaURL: mediaUrl,
+    mediaUrl: useFeaturedImage && featuredImageURL ? featuredImageURL : mediaUrl,
     allowedTypes: media_container_ALLOWED_MEDIA_TYPES,
     accept: "image/*,video/*",
-    onSelect: onSelectMedia
+    onSelect: onSelectMedia,
+    onToggleFeaturedImage: toggleUseFeaturedImage,
+    useFeaturedImage: useFeaturedImage
   }));
 }
 function PlaceholderContainer({
   className,
   mediaUrl,
-  onSelectMedia
+  onSelectMedia,
+  toggleUseFeaturedImage
 }) {
   const {
     createErrorNotice
@@ -30811,6 +30981,7 @@ function PlaceholderContainer({
     className: className,
     onSelect: onSelectMedia,
     accept: "image/*,video/*",
+    onToggleFeaturedImage: toggleUseFeaturedImage,
     allowedTypes: media_container_ALLOWED_MEDIA_TYPES,
     onError: onUploadError,
     disableMediaButtons: mediaUrl
@@ -30832,13 +31003,17 @@ function MediaContainer(props, ref) {
     mediaWidth,
     onSelectMedia,
     onWidthChange,
-    enableResize
+    enableResize,
+    toggleUseFeaturedImage,
+    useFeaturedImage,
+    featuredImageURL,
+    featuredImageAlt
   } = props;
   const isTemporaryMedia = !mediaId && (0,external_wp_blob_namespaceObject.isBlobURL)(mediaUrl);
   const {
     toggleSelection
   } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_blockEditor_namespaceObject.store);
-  if (mediaUrl) {
+  if (mediaUrl || featuredImageURL || useFeaturedImage) {
     const onResizeStart = () => {
       toggleSelection(false);
     };
@@ -30853,9 +31028,12 @@ function MediaContainer(props, ref) {
       right: enableResize && mediaPosition === 'left',
       left: enableResize && mediaPosition === 'right'
     };
-    const backgroundStyles = mediaType === 'image' && imageFill ? imageFillStyles(mediaUrl, focalPoint) : {};
+    const backgroundStyles = mediaType === 'image' && imageFill ? imageFillStyles(mediaUrl || featuredImageURL, focalPoint) : {};
     const mediaTypeRenderers = {
-      image: () => (0,external_React_namespaceObject.createElement)("img", {
+      image: () => useFeaturedImage && featuredImageURL ? (0,external_React_namespaceObject.createElement)("img", {
+        src: featuredImageURL,
+        alt: featuredImageAlt
+      }) : mediaUrl && (0,external_React_namespaceObject.createElement)("img", {
         src: mediaUrl,
         alt: mediaAlt
       }),
@@ -30885,10 +31063,15 @@ function MediaContainer(props, ref) {
       ref: ref
     }, (0,external_React_namespaceObject.createElement)(ToolbarEditButton, {
       onSelectMedia: onSelectMedia,
-      mediaUrl: mediaUrl,
-      mediaId: mediaId
-    }), (mediaTypeRenderers[mediaType] || media_container_noop)(), isTemporaryMedia && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Spinner, null), (0,external_React_namespaceObject.createElement)(PlaceholderContainer, {
+      mediaUrl: useFeaturedImage && featuredImageURL ? featuredImageURL : mediaUrl,
+      mediaId: mediaId,
+      toggleUseFeaturedImage: toggleUseFeaturedImage,
+      useFeaturedImage: useFeaturedImage
+    }), (mediaTypeRenderers[mediaType] || media_container_noop)(), isTemporaryMedia && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Spinner, null), !useFeaturedImage && (0,external_React_namespaceObject.createElement)(PlaceholderContainer, {
       ...props
+    }), !featuredImageURL && useFeaturedImage && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Placeholder, {
+      className: "wp-block-media-text--placeholder-image",
+      withIllustration: true
     }));
   }
   return (0,external_React_namespaceObject.createElement)(PlaceholderContainer, {
@@ -30997,7 +31180,11 @@ function edit_attributesFromMedia({
 function MediaTextEdit({
   attributes,
   isSelected,
-  setAttributes
+  setAttributes,
+  context: {
+    postId,
+    postType
+  }
 }) {
   const {
     focalPoint,
@@ -31015,9 +31202,26 @@ function MediaTextEdit({
     mediaWidth,
     rel,
     verticalAlignment,
-    allowedBlocks
+    allowedBlocks,
+    useFeaturedImage
   } = attributes;
   const mediaSizeSlug = attributes.mediaSizeSlug || DEFAULT_MEDIA_SIZE_SLUG;
+  const [featuredImage] = (0,external_wp_coreData_namespaceObject.useEntityProp)('postType', postType, 'featured_media', postId);
+  const featuredImageMedia = (0,external_wp_data_namespaceObject.useSelect)(select => featuredImage && select(external_wp_coreData_namespaceObject.store).getMedia(featuredImage, {
+    context: 'view'
+  }), [featuredImage]);
+  const featuredImageURL = useFeaturedImage ? featuredImageMedia?.source_url : '';
+  const featuredImageAlt = useFeaturedImage ? featuredImageMedia?.alt_text : '';
+  const toggleUseFeaturedImage = () => {
+    setAttributes({
+      imageFill: false,
+      mediaType: 'image',
+      mediaId: undefined,
+      mediaUrl: undefined,
+      mediaAlt: undefined,
+      useFeaturedImage: !useFeaturedImage
+    });
+  };
   const {
     imageSizes,
     image
@@ -31126,21 +31330,20 @@ function MediaTextEdit({
     onChange: () => setAttributes({
       imageFill: !imageFill
     })
-  }), imageFill && mediaUrl && mediaType === 'image' && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.FocalPointPicker, {
+  }), imageFill && (mediaUrl || featuredImageURL) && mediaType === 'image' && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.FocalPointPicker, {
     __nextHasNoMarginBottom: true,
-    __next40pxDefaultSize: true,
     label: (0,external_wp_i18n_namespaceObject.__)('Focal point'),
-    url: mediaUrl,
+    url: useFeaturedImage && featuredImageURL ? featuredImageURL : mediaUrl,
     value: focalPoint,
     onChange: value => setAttributes({
       focalPoint: value
     }),
     onDragStart: imperativeFocalPointPreview,
     onDrag: imperativeFocalPointPreview
-  }), mediaType === 'image' && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextareaControl, {
+  }), mediaType === 'image' && (mediaUrl || featuredImageURL) && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextareaControl, {
     __nextHasNoMarginBottom: true,
     label: (0,external_wp_i18n_namespaceObject.__)('Alternative text'),
-    value: mediaAlt,
+    value: mediaAlt || featuredImageAlt,
     onChange: onMediaAltChange,
     help: (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ExternalLink, {
       href: "https://www.w3.org/WAI/tutorials/images/decision-tree"
@@ -31187,7 +31390,7 @@ function MediaTextEdit({
     onChangeUrl: onSetHref,
     linkDestination: linkDestination,
     mediaType: mediaType,
-    mediaUrl: image && image.source_url,
+    mediaUrl: useFeaturedImage && featuredImageURL ? featuredImageURL : image && image.source_url,
     mediaLink: image && image.link,
     linkTarget: linkTarget,
     linkClass: linkClass,
@@ -31203,6 +31406,7 @@ function MediaTextEdit({
     commitWidthChange: commitWidthChange,
     ref: refMediaContainer,
     enableResize: blockEditingMode === 'default',
+    toggleUseFeaturedImage: toggleUseFeaturedImage,
     focalPoint,
     imageFill,
     isSelected,
@@ -31212,7 +31416,10 @@ function MediaTextEdit({
     mediaPosition,
     mediaType,
     mediaUrl,
-    mediaWidth
+    mediaWidth,
+    useFeaturedImage,
+    featuredImageURL,
+    featuredImageAlt
   }), mediaPosition !== 'right' && (0,external_React_namespaceObject.createElement)("div", {
     ...innerBlocksProps
   })));
@@ -31263,11 +31470,11 @@ function media_text_save_save({
     [`wp-image-${mediaId}`]: mediaId && mediaType === 'image',
     [`size-${mediaSizeSlug}`]: mediaId && mediaType === 'image'
   });
-  let image = (0,external_React_namespaceObject.createElement)("img", {
+  let image = mediaUrl ? (0,external_React_namespaceObject.createElement)("img", {
     src: mediaUrl,
     alt: mediaAlt,
     className: imageClasses || null
-  });
+  }) : null;
   if (href) {
     image = (0,external_React_namespaceObject.createElement)("a", {
       className: linkClass,
@@ -31623,8 +31830,13 @@ const media_text_metadata = {
     },
     allowedBlocks: {
       type: "array"
+    },
+    useFeaturedImage: {
+      type: "boolean",
+      "default": false
     }
   },
+  usesContext: ["postId", "postType"],
   supports: {
     anchor: true,
     align: ["wide", "full"],
@@ -32160,11 +32372,14 @@ function useNavigationMenu(ref) {
     return selectExistingMenu(select, ref);
   }, [ref]);
   const {
-    canCreate,
-    canUpdate,
-    canDelete,
-    isResolving,
-    hasResolved
+    // Can the user create navigation menus?
+    canCreate: canCreateNavigationMenus,
+    // Can the user update the specific navigation menu with the given post ID?
+    canUpdate: canUpdateNavigationMenu,
+    // Can the user delete the specific navigation menu with the given post ID?
+    canDelete: canDeleteNavigationMenu,
+    isResolving: isResolvingPermissions,
+    hasResolved: hasResolvedPermissions
   } = permissions;
   const {
     records: navigationMenus,
@@ -32180,13 +32395,13 @@ function useNavigationMenu(ref) {
     isResolvingNavigationMenus,
     hasResolvedNavigationMenus,
     canSwitchNavigationMenu,
-    canUserCreateNavigationMenu: canCreate,
-    isResolvingCanUserCreateNavigationMenu: isResolving,
-    hasResolvedCanUserCreateNavigationMenu: hasResolved,
-    canUserUpdateNavigationMenu: canUpdate,
-    hasResolvedCanUserUpdateNavigationMenu: ref ? hasResolved : undefined,
-    canUserDeleteNavigationMenu: canDelete,
-    hasResolvedCanUserDeleteNavigationMenu: ref ? hasResolved : undefined
+    canUserCreateNavigationMenus: canCreateNavigationMenus,
+    isResolvingCanUserCreateNavigationMenus: isResolvingPermissions,
+    hasResolvedCanUserCreateNavigationMenus: hasResolvedPermissions,
+    canUserUpdateNavigationMenu: canUpdateNavigationMenu,
+    hasResolvedCanUserUpdateNavigationMenu: ref ? hasResolvedPermissions : undefined,
+    canUserDeleteNavigationMenu: canDeleteNavigationMenu,
+    hasResolvedCanUserDeleteNavigationMenu: ref ? hasResolvedPermissions : undefined
   };
 }
 function selectExistingMenu(select, ref) {
@@ -32366,7 +32581,7 @@ function NavigationMenuSelector({
 }) {
   /* translators: %s: The name of a menu. */
   const createActionLabel = (0,external_wp_i18n_namespaceObject.__)("Create from '%s'");
-  const [isCreatingMenu, setIsCreatingMenu] = (0,external_wp_element_namespaceObject.useState)(false);
+  const [isUpdatingMenuRef, setIsUpdatingMenuRef] = (0,external_wp_element_namespaceObject.useState)(false);
   actionLabel = actionLabel || createActionLabel;
   const {
     menus: classicMenus
@@ -32375,7 +32590,7 @@ function NavigationMenuSelector({
     navigationMenus,
     isResolvingNavigationMenus,
     hasResolvedNavigationMenus,
-    canUserCreateNavigationMenu,
+    canUserCreateNavigationMenus,
     canSwitchNavigationMenu
   } = useNavigationMenu();
   const [currentTitle] = (0,external_wp_coreData_namespaceObject.useEntityProp)('postType', 'wp_navigation', 'title');
@@ -32389,19 +32604,20 @@ function NavigationMenuSelector({
       return {
         value: id,
         label,
-        ariaLabel: (0,external_wp_i18n_namespaceObject.sprintf)(actionLabel, label)
+        ariaLabel: (0,external_wp_i18n_namespaceObject.sprintf)(actionLabel, label),
+        disabled: isUpdatingMenuRef || isResolvingNavigationMenus || !hasResolvedNavigationMenus
       };
     }) || [];
-  }, [navigationMenus, actionLabel]);
+  }, [navigationMenus, actionLabel, isResolvingNavigationMenus, hasResolvedNavigationMenus, isUpdatingMenuRef]);
   const hasNavigationMenus = !!navigationMenus?.length;
   const hasClassicMenus = !!classicMenus?.length;
   const showNavigationMenus = !!canSwitchNavigationMenu;
-  const showClassicMenus = !!canUserCreateNavigationMenu;
+  const showClassicMenus = !!canUserCreateNavigationMenus;
   const noMenuSelected = hasNavigationMenus && !currentMenuId;
   const noBlockMenus = !hasNavigationMenus && hasResolvedNavigationMenus;
   const menuUnavailable = hasResolvedNavigationMenus && currentMenuId === null;
   let selectorLabel = '';
-  if (isCreatingMenu || isResolvingNavigationMenus) {
+  if (isResolvingNavigationMenus) {
     selectorLabel = (0,external_wp_i18n_namespaceObject.__)('Loading…');
   } else if (noMenuSelected || noBlockMenus || menuUnavailable) {
     // Note: classic Menus may be available.
@@ -32411,15 +32627,15 @@ function NavigationMenuSelector({
     selectorLabel = currentTitle;
   }
   (0,external_wp_element_namespaceObject.useEffect)(() => {
-    if (isCreatingMenu && (createNavigationMenuIsSuccess || createNavigationMenuIsError)) {
-      setIsCreatingMenu(false);
+    if (isUpdatingMenuRef && (createNavigationMenuIsSuccess || createNavigationMenuIsError)) {
+      setIsUpdatingMenuRef(false);
     }
-  }, [hasResolvedNavigationMenus, createNavigationMenuIsSuccess, canUserCreateNavigationMenu, createNavigationMenuIsError, isCreatingMenu, menuUnavailable, noBlockMenus, noMenuSelected]);
+  }, [hasResolvedNavigationMenus, createNavigationMenuIsSuccess, canUserCreateNavigationMenus, createNavigationMenuIsError, isUpdatingMenuRef, menuUnavailable, noBlockMenus, noMenuSelected]);
   const NavigationMenuSelectorDropdown = (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.DropdownMenu, {
     label: selectorLabel,
     icon: more_vertical,
     toggleProps: {
-      isSmall: true
+      size: 'small'
     }
   }, ({
     onClose
@@ -32428,35 +32644,35 @@ function NavigationMenuSelector({
   }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.MenuItemsChoice, {
     value: currentMenuId,
     onSelect: menuId => {
-      setIsCreatingMenu(true);
       onSelectNavigationMenu(menuId);
       onClose();
     },
-    choices: menuChoices,
-    disabled: isCreatingMenu
+    choices: menuChoices
   })), showClassicMenus && hasClassicMenus && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.MenuGroup, {
     label: (0,external_wp_i18n_namespaceObject.__)('Import Classic Menus')
   }, classicMenus?.map(menu => {
     const label = (0,external_wp_htmlEntities_namespaceObject.decodeEntities)(menu.name);
     return (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.MenuItem, {
-      onClick: () => {
-        setIsCreatingMenu(true);
-        onSelectClassicMenu(menu);
+      onClick: async () => {
+        setIsUpdatingMenuRef(true);
+        await onSelectClassicMenu(menu);
+        setIsUpdatingMenuRef(false);
         onClose();
       },
       key: menu.id,
       "aria-label": (0,external_wp_i18n_namespaceObject.sprintf)(createActionLabel, label),
-      disabled: isCreatingMenu
+      disabled: isUpdatingMenuRef || isResolvingNavigationMenus || !hasResolvedNavigationMenus
     }, label);
-  })), canUserCreateNavigationMenu && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.MenuGroup, {
+  })), canUserCreateNavigationMenus && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.MenuGroup, {
     label: (0,external_wp_i18n_namespaceObject.__)('Tools')
   }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.MenuItem, {
-    disabled: isCreatingMenu,
-    onClick: () => {
+    onClick: async () => {
+      setIsUpdatingMenuRef(true);
+      await onCreateNew();
+      setIsUpdatingMenuRef(false);
       onClose();
-      onCreateNew();
-      setIsCreatingMenu(true);
-    }
+    },
+    disabled: isUpdatingMenuRef || isResolvingNavigationMenus || !hasResolvedNavigationMenus
   }, (0,external_wp_i18n_namespaceObject.__)('Create new menu')))));
   return NavigationMenuSelectorDropdown;
 }
@@ -32483,8 +32699,8 @@ function NavigationPlaceholder({
   isSelected,
   currentMenuId,
   clientId,
-  canUserCreateNavigationMenu = false,
-  isResolvingCanUserCreateNavigationMenu,
+  canUserCreateNavigationMenus = false,
+  isResolvingCanUserCreateNavigationMenus,
   onSelectNavigationMenu,
   onSelectClassicMenu,
   onCreateEmpty
@@ -32504,7 +32720,7 @@ function NavigationPlaceholder({
       (0,external_wp_a11y_namespaceObject.speak)((0,external_wp_i18n_namespaceObject.__)('Navigation block setup options ready.'));
     }
   }, [hasResolvedMenus, isResolvingMenus, isSelected]);
-  const isResolvingActions = isResolvingMenus && isResolvingCanUserCreateNavigationMenu;
+  const isResolvingActions = isResolvingMenus && isResolvingCanUserCreateNavigationMenus;
   return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Placeholder, {
     className: "wp-block-navigation-placeholder"
   }, (0,external_React_namespaceObject.createElement)(placeholder_preview, {
@@ -32523,7 +32739,7 @@ function NavigationPlaceholder({
     clientId: clientId,
     onSelectNavigationMenu: onSelectNavigationMenu,
     onSelectClassicMenu: onSelectClassicMenu
-  }), (0,external_React_namespaceObject.createElement)("hr", null), canUserCreateNavigationMenu && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Button, {
+  }), (0,external_React_namespaceObject.createElement)("hr", null), canUserCreateNavigationMenus && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Button, {
     variant: "tertiary",
     onClick: onCreateEmpty
   }, (0,external_wp_i18n_namespaceObject.__)('Start empty'))))));
@@ -32910,9 +33126,8 @@ function UnsavedInnerBlocks({
 function NavigationMenuDeleteControl({
   onDelete
 }) {
-  const [isConfirmModalVisible, setIsConfirmModalVisible] = (0,external_wp_element_namespaceObject.useState)(false);
+  const [isConfirmDialogVisible, setIsConfirmDialogVisible] = (0,external_wp_element_namespaceObject.useState)(false);
   const id = (0,external_wp_coreData_namespaceObject.useEntityId)('postType', 'wp_navigation');
-  const [title] = (0,external_wp_coreData_namespaceObject.useEntityProp)('postType', 'wp_navigation', 'title');
   const {
     deleteEntityRecord
   } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_coreData_namespaceObject.store);
@@ -32921,28 +33136,21 @@ function NavigationMenuDeleteControl({
     variant: "secondary",
     isDestructive: true,
     onClick: () => {
-      setIsConfirmModalVisible(true);
+      setIsConfirmDialogVisible(true);
     }
-  }, (0,external_wp_i18n_namespaceObject.__)('Delete menu')), isConfirmModalVisible && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Modal, {
-    title: (0,external_wp_i18n_namespaceObject.sprintf)( /* translators: %s: the name of a menu to delete */
-    (0,external_wp_i18n_namespaceObject.__)('Delete %s'), title),
-    onRequestClose: () => setIsConfirmModalVisible(false)
-  }, (0,external_React_namespaceObject.createElement)("p", null, (0,external_wp_i18n_namespaceObject.__)('Are you sure you want to delete this navigation menu?')), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.__experimentalHStack, {
-    justify: "right"
-  }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Button, {
-    variant: "tertiary",
-    onClick: () => {
-      setIsConfirmModalVisible(false);
-    }
-  }, (0,external_wp_i18n_namespaceObject.__)('Cancel')), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Button, {
-    variant: "primary",
-    onClick: () => {
+  }, (0,external_wp_i18n_namespaceObject.__)('Delete menu')), isConfirmDialogVisible && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.__experimentalConfirmDialog, {
+    isOpen: true,
+    onConfirm: () => {
       deleteEntityRecord('postType', 'wp_navigation', id, {
         force: true
       });
-      onDelete(title);
-    }
-  }, (0,external_wp_i18n_namespaceObject.__)('Confirm')))));
+      onDelete();
+    },
+    onCancel: () => {
+      setIsConfirmDialogVisible(false);
+    },
+    confirmButtonText: (0,external_wp_i18n_namespaceObject.__)('Delete')
+  }, (0,external_wp_i18n_namespaceObject.__)('Are you sure you want to delete this Navigation menu?')));
 }
 
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/navigation/edit/use-navigation-notice.js
@@ -34590,8 +34798,8 @@ function Navigation({
     isSuccess: createNavigationMenuIsSuccess,
     isError: createNavigationMenuIsError
   } = useCreateNavigationMenu(clientId);
-  const createUntitledEmptyNavigationMenu = () => {
-    createNavigationMenu('');
+  const createUntitledEmptyNavigationMenu = async () => {
+    await createNavigationMenu('');
   };
   const {
     hasUncontrolledInnerBlocks,
@@ -34615,9 +34823,9 @@ function Navigation({
     hasResolvedCanUserUpdateNavigationMenu,
     canUserDeleteNavigationMenu,
     hasResolvedCanUserDeleteNavigationMenu,
-    canUserCreateNavigationMenu,
-    isResolvingCanUserCreateNavigationMenu,
-    hasResolvedCanUserCreateNavigationMenu
+    canUserCreateNavigationMenus,
+    isResolvingCanUserCreateNavigationMenus,
+    hasResolvedCanUserCreateNavigationMenus
   } = useNavigationMenu(ref);
   const navMenuResolvedButMissing = hasResolvedNavigationMenus && isNavigationMenuMissing;
   const {
@@ -34720,12 +34928,7 @@ function Navigation({
   const [detectedOverlayBackgroundColor, setDetectedOverlayBackgroundColor] = (0,external_wp_element_namespaceObject.useState)();
   const [detectedOverlayColor, setDetectedOverlayColor] = (0,external_wp_element_namespaceObject.useState)();
   const onSelectClassicMenu = async classicMenu => {
-    const navMenu = await convertClassicMenu(classicMenu.id, classicMenu.name, 'draft');
-    if (navMenu) {
-      handleUpdateMenu(navMenu.id, {
-        focusNavigationBlock: true
-      });
-    }
+    return convertClassicMenu(classicMenu.id, classicMenu.name, 'draft');
   };
   const onSelectNavigationMenu = menuId => {
     handleUpdateMenu(menuId);
@@ -34752,11 +34955,14 @@ function Navigation({
     }
     if (classicMenuConversionStatus === CLASSIC_MENU_CONVERSION_SUCCESS) {
       showClassicMenuConversionNotice((0,external_wp_i18n_namespaceObject.__)('Classic menu imported successfully.'));
+      handleUpdateMenu(createNavigationMenuPost?.id, {
+        focusNavigationBlock: true
+      });
     }
     if (classicMenuConversionStatus === CLASSIC_MENU_CONVERSION_ERROR) {
       showClassicMenuConversionNotice((0,external_wp_i18n_namespaceObject.__)('Classic menu import failed.'));
     }
-  }, [classicMenuConversionStatus, classicMenuConversionError, hideClassicMenuConversionNotice, showClassicMenuConversionNotice]);
+  }, [classicMenuConversionStatus, classicMenuConversionError, hideClassicMenuConversionNotice, showClassicMenuConversionNotice, createNavigationMenuPost?.id, handleUpdateMenu]);
   (0,external_wp_element_namespaceObject.useEffect)(() => {
     if (!enableContrastChecking) {
       return;
@@ -34782,12 +34988,12 @@ function Navigation({
       if (ref && !navMenuResolvedButMissing && hasResolvedCanUserUpdateNavigationMenu && !canUserUpdateNavigationMenu) {
         showNavigationMenuPermissionsNotice((0,external_wp_i18n_namespaceObject.__)('You do not have permission to edit this Menu. Any changes made will not be saved.'));
       }
-      if (!ref && hasResolvedCanUserCreateNavigationMenu && !canUserCreateNavigationMenu) {
+      if (!ref && hasResolvedCanUserCreateNavigationMenus && !canUserCreateNavigationMenus) {
         showNavigationMenuPermissionsNotice((0,external_wp_i18n_namespaceObject.__)('You do not have permission to create Navigation Menus.'));
       }
     }
-  }, [isSelected, isInnerBlockSelected, canUserUpdateNavigationMenu, hasResolvedCanUserUpdateNavigationMenu, canUserCreateNavigationMenu, hasResolvedCanUserCreateNavigationMenu, ref, hideNavigationMenuPermissionsNotice, showNavigationMenuPermissionsNotice, navMenuResolvedButMissing]);
-  const hasManagePermissions = canUserCreateNavigationMenu || canUserUpdateNavigationMenu;
+  }, [isSelected, isInnerBlockSelected, canUserUpdateNavigationMenu, hasResolvedCanUserUpdateNavigationMenu, canUserCreateNavigationMenus, hasResolvedCanUserCreateNavigationMenus, ref, hideNavigationMenuPermissionsNotice, showNavigationMenuPermissionsNotice, navMenuResolvedButMissing]);
+  const hasManagePermissions = canUserCreateNavigationMenus || canUserUpdateNavigationMenu;
   const overlayMenuPreviewClasses = classnames_default()('wp-block-navigation__overlay-menu-preview', {
     open: overlayMenuPreview
   });
@@ -34985,8 +35191,8 @@ function Navigation({
       isSelected: isSelected,
       currentMenuId: ref,
       clientId: clientId,
-      canUserCreateNavigationMenu: canUserCreateNavigationMenu,
-      isResolvingCanUserCreateNavigationMenu: isResolvingCanUserCreateNavigationMenu,
+      canUserCreateNavigationMenus: canUserCreateNavigationMenus,
+      isResolvingCanUserCreateNavigationMenus: isResolvingCanUserCreateNavigationMenus,
       onSelectNavigationMenu: onSelectNavigationMenu,
       onSelectClassicMenu: onSelectClassicMenu,
       onCreateEmpty: createUntitledEmptyNavigationMenu
@@ -35013,25 +35219,21 @@ function Navigation({
   }), blockEditingMode === 'default' && stylingInspectorControls, blockEditingMode === 'default' && isEntityAvailable && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, {
     group: "advanced"
   }, hasResolvedCanUserUpdateNavigationMenu && canUserUpdateNavigationMenu && (0,external_React_namespaceObject.createElement)(NavigationMenuNameControl, null), hasResolvedCanUserDeleteNavigationMenu && canUserDeleteNavigationMenu && (0,external_React_namespaceObject.createElement)(NavigationMenuDeleteControl, {
-    onDelete: (deletedMenuTitle = '') => {
+    onDelete: () => {
       replaceInnerBlocks(clientId, []);
-      showNavigationMenuStatusNotice((0,external_wp_i18n_namespaceObject.sprintf)(
-      // translators: %s: the name of a menu (e.g. Header navigation).
-      (0,external_wp_i18n_namespaceObject.__)('Navigation menu %s successfully deleted.'), deletedMenuTitle));
+      showNavigationMenuStatusNotice((0,external_wp_i18n_namespaceObject.__)('Navigation menu successfully deleted.'));
     }
   }), (0,external_React_namespaceObject.createElement)(manage_menus_button, {
     disabled: isManageMenusButtonDisabled,
     className: "wp-block-navigation-manage-menus-button"
-  })), isLoading && (0,external_React_namespaceObject.createElement)(TagName, {
-    ...blockProps
-  }, (0,external_React_namespaceObject.createElement)("div", {
+  })), (0,external_React_namespaceObject.createElement)(TagName, {
+    ...blockProps,
+    "aria-describedby": !isPlaceholder && !isLoading ? accessibleDescriptionId : undefined
+  }, isLoading && (0,external_React_namespaceObject.createElement)("div", {
     className: "wp-block-navigation__loading-indicator-container"
   }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Spinner, {
     className: "wp-block-navigation__loading-indicator"
-  }))), !isLoading && (0,external_React_namespaceObject.createElement)(TagName, {
-    ...blockProps,
-    "aria-describedby": !isPlaceholder ? accessibleDescriptionId : undefined
-  }, (0,external_React_namespaceObject.createElement)(AccessibleMenuDescription, {
+  })), !isLoading && (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(AccessibleMenuDescription, {
     id: accessibleDescriptionId
   }), (0,external_React_namespaceObject.createElement)(ResponsiveWrapper, {
     id: clientId,
@@ -35048,7 +35250,7 @@ function Navigation({
     hasCustomPlaceholder: !!CustomPlaceholder,
     templateLock: templateLock,
     orientation: orientation
-  })))));
+  }))))));
 }
 /* harmony default export */ const navigation_edit = ((0,external_wp_blockEditor_namespaceObject.withColors)({
   textColor: 'color'
@@ -35913,7 +36115,7 @@ const useIsDraggingWithin = elementRef => {
       ownerDocument.removeEventListener('dragend', handleDragEnd);
       ownerDocument.removeEventListener('dragenter', handleDragEnter);
     };
-  }, []);
+  }, [elementRef]);
   return isDraggingWithin;
 };
 const useIsInvalidLink = (kind, type, id) => {
@@ -35992,9 +36194,12 @@ function NavigationLinkEdit({
   } = context;
   const {
     replaceBlock,
-    __unstableMarkNextChangeAsNotPersistent
+    __unstableMarkNextChangeAsNotPersistent,
+    selectPreviousBlock
   } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_blockEditor_namespaceObject.store);
   const [isLinkOpen, setIsLinkOpen] = (0,external_wp_element_namespaceObject.useState)(false);
+  // Store what element opened the popover, so we know where to return focus to (toolbar button vs navigation link text)
+  const [openedBy, setOpenedBy] = (0,external_wp_element_namespaceObject.useState)(null);
   // Use internal state instead of a ref to make sure that the component
   // re-renders when the popover's anchor updates.
   const [popoverAnchor, setPopoverAnchor] = (0,external_wp_element_namespaceObject.useState)(null);
@@ -36002,6 +36207,7 @@ function NavigationLinkEdit({
   const isDraggingWithin = useIsDraggingWithin(listItemRef);
   const itemLabelPlaceholder = (0,external_wp_i18n_namespaceObject.__)('Add label…');
   const ref = (0,external_wp_element_namespaceObject.useRef)();
+  const prevUrl = (0,external_wp_compose_namespaceObject.usePrevious)(url);
 
   // Change the label using inspector causes rich text to change focus on firefox.
   // This is a workaround to keep the focus on the label field when label filed is focused we don't render the rich text.
@@ -36028,15 +36234,15 @@ function NavigationLinkEdit({
       isParentOfSelectedBlock: hasSelectedInnerBlock(clientId, true),
       hasChildren: !!getBlockCount(clientId)
     };
-  }, [clientId]);
+  }, [clientId, maxNestingLevel]);
 
   /**
    * Transform to submenu block.
    */
-  function transformToSubmenu() {
+  const transformToSubmenu = () => {
     const newSubmenu = (0,external_wp_blocks_namespaceObject.createBlock)('core/navigation-submenu', attributes, innerBlocks.length > 0 ? innerBlocks : [(0,external_wp_blocks_namespaceObject.createBlock)('core/navigation-link')]);
     replaceBlock(clientId, newSubmenu);
-  }
+  };
   (0,external_wp_element_namespaceObject.useEffect)(() => {
     // Show the LinkControl on mount if the URL is empty
     // ( When adding a new menu item)
@@ -36068,17 +36274,12 @@ function NavigationLinkEdit({
 
   // If the LinkControl popover is open and the URL has changed, close the LinkControl and focus the label text.
   (0,external_wp_element_namespaceObject.useEffect)(() => {
-    if (isLinkOpen && url) {
-      // Does this look like a URL and have something TLD-ish?
-      if ((0,external_wp_url_namespaceObject.isURL)((0,external_wp_url_namespaceObject.prependHTTP)(label)) && /^.+\.[a-z]+/.test(label)) {
-        // Focus and select the label text.
-        selectLabelText();
-      } else {
-        // Focus it (but do not select).
-        (0,external_wp_dom_namespaceObject.placeCaretAtHorizontalEdge)(ref.current, true);
-      }
+    // We only want to do this when the URL has gone from nothing to a new URL AND the label looks like a URL
+    if (!prevUrl && url && isLinkOpen && (0,external_wp_url_namespaceObject.isURL)((0,external_wp_url_namespaceObject.prependHTTP)(label)) && /^.+\.[a-z]+/.test(label)) {
+      // Focus and select the label text.
+      selectLabelText();
     }
-  }, [url]);
+  }, [prevUrl, url, isLinkOpen, label]);
 
   /**
    * Focus the Link label text and select it.
@@ -36127,8 +36328,15 @@ function NavigationLinkEdit({
     customBackgroundColor
   } = getColors(context, !isTopLevelLink);
   function onKeyDown(event) {
-    if (external_wp_keycodes_namespaceObject.isKeyboardEvent.primary(event, 'k') || (!url || isDraft || isInvalid) && event.keyCode === external_wp_keycodes_namespaceObject.ENTER) {
+    if (external_wp_keycodes_namespaceObject.isKeyboardEvent.primary(event, 'k')) {
+      // Required to prevent the command center from opening,
+      // as it shares the CMD+K shortcut.
+      // See https://github.com/WordPress/gutenberg/pull/59845.
+      event.preventDefault();
+      // If this link is a child of a parent submenu item, the parent submenu item event will also open, closing this popover
+      event.stopPropagation();
       setIsLinkOpen(true);
+      setOpenedBy(ref.current);
     }
   }
   const blockProps = (0,external_wp_blockEditor_namespaceObject.useBlockProps)({
@@ -36158,7 +36366,10 @@ function NavigationLinkEdit({
     renderAppender: false
   });
   if (!url || isInvalid || isDraft) {
-    blockProps.onClick = () => setIsLinkOpen(true);
+    blockProps.onClick = () => {
+      setIsLinkOpen(true);
+      setOpenedBy(ref.current);
+    };
   }
   const classes = classnames_default()('wp-block-navigation-item__content', {
     'wp-block-navigation-link__placeholder': !url || isInvalid || isDraft
@@ -36172,7 +36383,10 @@ function NavigationLinkEdit({
     icon: library_link,
     title: (0,external_wp_i18n_namespaceObject.__)('Link'),
     shortcut: external_wp_keycodes_namespaceObject.displayShortcut.primary('k'),
-    onClick: () => setIsLinkOpen(true)
+    onClick: event => {
+      setIsLinkOpen(true);
+      setOpenedBy(event.currentTarget);
+    }
   }), !isAtMaxNesting && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ToolbarButton, {
     name: "submenu",
     icon: add_submenu,
@@ -36182,25 +36396,27 @@ function NavigationLinkEdit({
     title: (0,external_wp_i18n_namespaceObject.__)('Settings')
   }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
     __nextHasNoMarginBottom: true,
+    __next40pxDefaultSize: true,
     value: label ? (0,external_wp_dom_namespaceObject.__unstableStripHTML)(label) : '',
     onChange: labelValue => {
       setAttributes({
         label: labelValue
       });
     },
-    label: (0,external_wp_i18n_namespaceObject.__)('Label'),
+    label: (0,external_wp_i18n_namespaceObject.__)('Text'),
     autoComplete: "off",
     onFocus: () => setIsLabelFieldFocused(true),
     onBlur: () => setIsLabelFieldFocused(false)
   }), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
     __nextHasNoMarginBottom: true,
+    __next40pxDefaultSize: true,
     value: url ? (0,external_wp_url_namespaceObject.safeDecodeURI)(url) : '',
     onChange: urlValue => {
       updateAttributes({
         url: urlValue
       }, setAttributes, attributes);
     },
-    label: (0,external_wp_i18n_namespaceObject.__)('URL'),
+    label: (0,external_wp_i18n_namespaceObject.__)('Link'),
     autoComplete: "off"
   }), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextareaControl, {
     __nextHasNoMarginBottom: true,
@@ -36214,6 +36430,7 @@ function NavigationLinkEdit({
     help: (0,external_wp_i18n_namespaceObject.__)('The description will be displayed in the menu if the current theme supports it.')
   }), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
     __nextHasNoMarginBottom: true,
+    __next40pxDefaultSize: true,
     value: title || '',
     onChange: titleValue => {
       setAttributes({
@@ -36225,6 +36442,7 @@ function NavigationLinkEdit({
     help: (0,external_wp_i18n_namespaceObject.__)('Additional information to help clarify the purpose of the link.')
   }), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
     __nextHasNoMarginBottom: true,
+    __next40pxDefaultSize: true,
     value: rel || '',
     onChange: relValue => {
       setAttributes({
@@ -36256,12 +36474,7 @@ function NavigationLinkEdit({
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('Navigation link text'),
     placeholder: itemLabelPlaceholder,
     withoutInteractiveFormatting: true,
-    allowedFormats: ['core/bold', 'core/italic', 'core/image', 'core/strikethrough'],
-    onClick: () => {
-      if (!url) {
-        setIsLinkOpen(true);
-      }
-    }
+    allowedFormats: ['core/bold', 'core/italic', 'core/image', 'core/strikethrough']
   }), description && (0,external_React_namespaceObject.createElement)("span", {
     className: "wp-block-navigation-item__description"
   }, description)), (isInvalid || isDraft || isLabelFieldFocused) && (0,external_React_namespaceObject.createElement)("div", {
@@ -36283,8 +36496,22 @@ function NavigationLinkEdit({
       // If there is no link then remove the auto-inserted block.
       // This avoids empty blocks which can provided a poor UX.
       if (!url) {
-        // Need to handle refocusing the Nav block or the inserter?
+        // Select the previous block to keep focus nearby
+        selectPreviousBlock(clientId, true);
+        // Remove the link.
         onReplace([]);
+        return;
+      }
+      setIsLinkOpen(false);
+      if (openedBy) {
+        openedBy.focus();
+        setOpenedBy(null);
+      } else if (ref.current) {
+        // select the ref when adding a new link
+        ref.current.focus();
+      } else {
+        // Fallback
+        selectPreviousBlock(clientId, true);
       }
     },
     anchor: popoverAnchor,
@@ -36734,7 +36961,6 @@ const ItemSubmenuIcon = () => (0,external_React_namespaceObject.createElement)(e
 
 
 
-
 /**
  * Internal dependencies
  */
@@ -36838,9 +37064,12 @@ function NavigationSubmenuEdit({
   } = context;
   const {
     __unstableMarkNextChangeAsNotPersistent,
-    replaceBlock
+    replaceBlock,
+    selectBlock
   } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_blockEditor_namespaceObject.store);
   const [isLinkOpen, setIsLinkOpen] = (0,external_wp_element_namespaceObject.useState)(false);
+  // Store what element opened the popover, so we know where to return focus to (toolbar button vs navigation link text)
+  const [openedBy, setOpenedBy] = (0,external_wp_element_namespaceObject.useState)(null);
   // Use internal state instead of a ref to make sure that the component
   // re-renders when the popover's anchor updates.
   const [popoverAnchor, setPopoverAnchor] = (0,external_wp_element_namespaceObject.useState)(null);
@@ -36915,9 +37144,6 @@ function NavigationSubmenuEdit({
       if ((0,external_wp_url_namespaceObject.isURL)((0,external_wp_url_namespaceObject.prependHTTP)(label)) && /^.+\.[a-z]+/.test(label)) {
         // Focus and select the label text.
         selectLabelText();
-      } else {
-        // Focus it (but do not select).
-        (0,external_wp_dom_namespaceObject.placeCaretAtHorizontalEdge)(ref.current, true);
       }
     }
   }, [url]);
@@ -36954,7 +37180,14 @@ function NavigationSubmenuEdit({
   } = getColors(context, parentCount > 0);
   function onKeyDown(event) {
     if (external_wp_keycodes_namespaceObject.isKeyboardEvent.primary(event, 'k')) {
+      // Required to prevent the command center from opening,
+      // as it shares the CMD+K shortcut.
+      // See https://github.com/WordPress/gutenberg/pull/59845.
+      event.preventDefault();
+      // If we don't stop propogation, this event bubbles up to the parent submenu item
+      event.stopPropagation();
       setIsLinkOpen(true);
+      setOpenedBy(ref.current);
     }
   }
   const blockProps = (0,external_wp_blockEditor_namespaceObject.useBlockProps)({
@@ -37013,7 +37246,10 @@ function NavigationSubmenuEdit({
     icon: library_link,
     title: (0,external_wp_i18n_namespaceObject.__)('Link'),
     shortcut: external_wp_keycodes_namespaceObject.displayShortcut.primary('k'),
-    onClick: () => setIsLinkOpen(true)
+    onClick: event => {
+      setIsLinkOpen(true);
+      setOpenedBy(event.currentTarget);
+    }
   }), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ToolbarButton, {
     name: "revert",
     icon: remove_submenu,
@@ -37025,23 +37261,25 @@ function NavigationSubmenuEdit({
     title: (0,external_wp_i18n_namespaceObject.__)('Settings')
   }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
     __nextHasNoMarginBottom: true,
+    __next40pxDefaultSize: true,
     value: label || '',
     onChange: labelValue => {
       setAttributes({
         label: labelValue
       });
     },
-    label: (0,external_wp_i18n_namespaceObject.__)('Label'),
+    label: (0,external_wp_i18n_namespaceObject.__)('Text'),
     autoComplete: "off"
   }), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
     __nextHasNoMarginBottom: true,
+    __next40pxDefaultSize: true,
     value: url || '',
     onChange: urlValue => {
       setAttributes({
         url: urlValue
       });
     },
-    label: (0,external_wp_i18n_namespaceObject.__)('URL'),
+    label: (0,external_wp_i18n_namespaceObject.__)('Link'),
     autoComplete: "off"
   }), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextareaControl, {
     __nextHasNoMarginBottom: true,
@@ -37055,6 +37293,7 @@ function NavigationSubmenuEdit({
     help: (0,external_wp_i18n_namespaceObject.__)('The description will be displayed in the menu if the current theme supports it.')
   }), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
     __nextHasNoMarginBottom: true,
+    __next40pxDefaultSize: true,
     value: title || '',
     onChange: titleValue => {
       setAttributes({
@@ -37066,6 +37305,7 @@ function NavigationSubmenuEdit({
     help: (0,external_wp_i18n_namespaceObject.__)('Additional information to help clarify the purpose of the link.')
   }), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.TextControl, {
     __nextHasNoMarginBottom: true,
+    __next40pxDefaultSize: true,
     value: rel || '',
     onChange: relValue => {
       setAttributes({
@@ -37096,12 +37336,21 @@ function NavigationSubmenuEdit({
     onClick: () => {
       if (!openSubmenusOnClick && !url) {
         setIsLinkOpen(true);
+        setOpenedBy(ref.current);
       }
     }
   }), !openSubmenusOnClick && isLinkOpen && (0,external_React_namespaceObject.createElement)(LinkUI, {
     clientId: clientId,
     link: attributes,
-    onClose: () => setIsLinkOpen(false),
+    onClose: () => {
+      setIsLinkOpen(false);
+      if (openedBy) {
+        openedBy.focus();
+        setOpenedBy(null);
+      } else {
+        selectBlock(clientId);
+      }
+    },
     anchor: popoverAnchor,
     hasCreateSuggestion: userCanCreate,
     onRemove: () => {
@@ -37606,6 +37855,19 @@ const PatternEdit = ({
         // Clone blocks from the pattern before insertion to ensure they receive
         // distinct client ids. See https://github.com/WordPress/gutenberg/issues/50628.
         const clonedBlocks = selectedPattern.blocks.map(block => (0,external_wp_blocks_namespaceObject.cloneBlock)(injectThemeAttributeInBlockTemplateContent(block)));
+        // If the pattern has a single block and categories, we should add the
+        // categories of the pattern to the block's metadata.
+        if (clonedBlocks.length === 1 && selectedPattern.categories?.length > 0) {
+          clonedBlocks[0].attributes = {
+            ...clonedBlocks[0].attributes,
+            metadata: {
+              ...clonedBlocks[0].attributes.metadata,
+              categories: selectedPattern.categories,
+              patternName: selectedPattern.name,
+              name: clonedBlocks[0].attributes.metadata.name || selectedPattern.title
+            }
+          };
+        }
         const rootEditingMode = getBlockEditingMode(rootClientId);
         registry.batch(() => {
           // Temporarily set the root block to default mode to allow replacing the pattern.
@@ -39461,6 +39723,7 @@ function PostAuthorEdit({
   })), (0,external_React_namespaceObject.createElement)("div", {
     className: "wp-block-post-author__content"
   }, (!external_wp_blockEditor_namespaceObject.RichText.isEmpty(byline) || isSelected) && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+    identifier: "byline",
     className: "wp-block-post-author__byline",
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('Post author byline text'),
     placeholder: (0,external_wp_i18n_namespaceObject.__)('Write byline…'),
@@ -40493,27 +40756,6 @@ const postContent = (0,external_React_namespaceObject.createElement)(external_wp
 }));
 /* harmony default export */ const post_content = (postContent);
 
-;// CONCATENATED MODULE: ./packages/block-library/build-module/utils/hooks.js
-/**
- * WordPress dependencies
- */
-
-
-
-/**
- * Returns whether the current user can edit the given entity.
- *
- * @param {string} kind     Entity kind.
- * @param {string} name     Entity name.
- * @param {string} recordId Record's id.
- */
-function useCanEditEntity(kind, name, recordId) {
-  return (0,external_wp_data_namespaceObject.useSelect)(select => select(external_wp_coreData_namespaceObject.store).canUserEditEntityRecord(kind, name, recordId), [kind, name, recordId]);
-}
-/* harmony default export */ const hooks = ({
-  useCanEditEntity
-});
-
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/post-content/edit.js
 
 /**
@@ -41123,6 +41365,7 @@ function PostExcerptEditor({
     }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.Warning, null, (0,external_wp_i18n_namespaceObject.__)('The content is currently protected and does not have the available excerpt.')));
   }
   const readMoreLink = (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+    identifier: "moreText",
     className: "wp-block-post-excerpt__more-link",
     tagName: "a",
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('“Read more” link text'),
@@ -41505,24 +41748,7 @@ const DimensionControls = ({
 };
 /* harmony default export */ const dimension_controls = (DimensionControls);
 
-;// CONCATENATED MODULE: ./packages/block-library/build-module/post-featured-image/utils.js
-/**
- * Generates the opacity/dim class based on given number.
- *
- * @param {number} ratio Dim/opacity number.
- *
- * @return {string} Generated class.
- */
-function utils_dimRatioToClass(ratio) {
-  return ratio === undefined ? null : 'has-background-dim-' + 10 * Math.round(ratio / 10);
-}
-
-;// CONCATENATED MODULE: ./packages/block-library/build-module/post-featured-image/overlay.js
-
-/**
- * External dependencies
- */
-
+;// CONCATENATED MODULE: ./packages/block-library/build-module/post-featured-image/overlay-controls.js
 
 /**
  * WordPress dependencies
@@ -41530,11 +41756,6 @@ function utils_dimRatioToClass(ratio) {
 
 
 
-
-
-/**
- * Internal dependencies
- */
 
 const Overlay = ({
   clientId,
@@ -41547,30 +41768,14 @@ const Overlay = ({
     dimRatio
   } = attributes;
   const {
-    gradientClass,
     gradientValue,
     setGradient
   } = (0,external_wp_blockEditor_namespaceObject.__experimentalUseGradient)();
   const colorGradientSettings = (0,external_wp_blockEditor_namespaceObject.__experimentalUseMultipleOriginColorsAndGradients)();
-  const borderProps = (0,external_wp_blockEditor_namespaceObject.__experimentalUseBorderProps)(attributes);
-  const overlayStyles = {
-    backgroundColor: overlayColor.color,
-    backgroundImage: gradientValue,
-    ...borderProps.style
-  };
   if (!colorGradientSettings.hasColorsOrGradients) {
     return null;
   }
-  return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, !!dimRatio && (0,external_React_namespaceObject.createElement)("span", {
-    "aria-hidden": "true",
-    className: classnames_default()('wp-block-post-featured-image__overlay', utils_dimRatioToClass(dimRatio), {
-      [overlayColor.class]: overlayColor.class,
-      'has-background-dim': dimRatio !== undefined,
-      'has-background-gradient': gradientValue,
-      [gradientClass]: gradientClass
-    }, borderProps.className),
-    style: overlayStyles
-  }), (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, {
+  return (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, {
     group: "color"
   }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.__experimentalColorGradientSettingsDropdown, {
     __experimentalIsRenderedInSidebar: true,
@@ -41613,11 +41818,76 @@ const Overlay = ({
     step: 10,
     required: true,
     __next40pxDefaultSize: true
-  }))));
+  })));
+};
+/* harmony default export */ const overlay_controls = ((0,external_wp_compose_namespaceObject.compose)([(0,external_wp_blockEditor_namespaceObject.withColors)({
+  overlayColor: 'background-color'
+})])(Overlay));
+
+;// CONCATENATED MODULE: ./packages/block-library/build-module/post-featured-image/utils.js
+/**
+ * Generates the opacity/dim class based on given number.
+ *
+ * @param {number} ratio Dim/opacity number.
+ *
+ * @return {string} Generated class.
+ */
+function utils_dimRatioToClass(ratio) {
+  return ratio === undefined ? null : 'has-background-dim-' + 10 * Math.round(ratio / 10);
+}
+
+;// CONCATENATED MODULE: ./packages/block-library/build-module/post-featured-image/overlay.js
+
+/**
+ * External dependencies
+ */
+
+
+/**
+ * WordPress dependencies
+ */
+
+
+
+/**
+ * Internal dependencies
+ */
+
+const overlay_Overlay = ({
+  attributes,
+  overlayColor
+}) => {
+  const {
+    dimRatio
+  } = attributes;
+  const {
+    gradientClass,
+    gradientValue
+  } = (0,external_wp_blockEditor_namespaceObject.__experimentalUseGradient)();
+  const colorGradientSettings = (0,external_wp_blockEditor_namespaceObject.__experimentalUseMultipleOriginColorsAndGradients)();
+  const borderProps = (0,external_wp_blockEditor_namespaceObject.__experimentalUseBorderProps)(attributes);
+  const overlayStyles = {
+    backgroundColor: overlayColor.color,
+    backgroundImage: gradientValue,
+    ...borderProps.style
+  };
+  if (!colorGradientSettings.hasColorsOrGradients || !dimRatio) {
+    return null;
+  }
+  return (0,external_React_namespaceObject.createElement)("span", {
+    "aria-hidden": "true",
+    className: classnames_default()('wp-block-post-featured-image__overlay', utils_dimRatioToClass(dimRatio), {
+      [overlayColor.class]: overlayColor.class,
+      'has-background-dim': dimRatio !== undefined,
+      'has-background-gradient': gradientValue,
+      [gradientClass]: gradientClass
+    }, borderProps.className),
+    style: overlayStyles
+  });
 };
 /* harmony default export */ const overlay = ((0,external_wp_compose_namespaceObject.compose)([(0,external_wp_blockEditor_namespaceObject.withColors)({
   overlayColor: 'background-color'
-})])(Overlay));
+})])(overlay_Overlay));
 
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/post-featured-image/edit.js
 
@@ -41641,6 +41911,7 @@ const Overlay = ({
 /**
  * Internal dependencies
  */
+
 
 
 const post_featured_image_edit_ALLOWED_MEDIA_TYPES = ['image'];
@@ -41728,6 +41999,8 @@ function PostFeaturedImageEdit({
     }
   });
   const borderProps = (0,external_wp_blockEditor_namespaceObject.__experimentalUseBorderProps)(attributes);
+  const shadowProps = (0,external_wp_blockEditor_namespaceObject.__experimentalGetShadowClassesAndStyles)(attributes);
+  const blockEditingMode = (0,external_wp_blockEditor_namespaceObject.useBlockEditingMode)();
   const placeholder = content => {
     return (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Placeholder, {
       className: classnames_default()('block-editor-media-placeholder', borderProps.className),
@@ -41735,7 +42008,8 @@ function PostFeaturedImageEdit({
       style: {
         height: !!aspectRatio && '100%',
         width: !!aspectRatio && '100%',
-        ...borderProps.style
+        ...borderProps.style,
+        ...shadowProps.style
       }
     }, content);
   };
@@ -41752,7 +42026,11 @@ function PostFeaturedImageEdit({
       type: 'snackbar'
     });
   };
-  const controls = (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(dimension_controls, {
+  const controls = blockEditingMode === 'default' && (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(overlay_controls, {
+    attributes: attributes,
+    setAttributes: setAttributes,
+    clientId: clientId
+  }), (0,external_React_namespaceObject.createElement)(dimension_controls, {
     clientId: clientId,
     attributes: attributes,
     setAttributes: setAttributes,
@@ -41810,6 +42088,7 @@ function PostFeaturedImageEdit({
   const label = (0,external_wp_i18n_namespaceObject.__)('Add a featured image');
   const imageStyles = {
     ...borderProps.style,
+    ...shadowProps.style,
     height: aspectRatio ? '100%' : height,
     width: !!aspectRatio && '100%',
     objectFit: !!(height || aspectRatio) && scale
@@ -41959,7 +42238,6 @@ const post_featured_image_metadata = {
   supports: {
     align: ["left", "right", "center", "wide", "full"],
     color: {
-      __experimentalDuotone: "img, .wp-block-post-featured-image__placeholder, .components-placeholder__illustration, .components-placeholder::before",
       text: false,
       background: false
     },
@@ -41967,13 +42245,18 @@ const post_featured_image_metadata = {
       color: true,
       radius: true,
       width: true,
-      __experimentalSelector: "img, .block-editor-media-placeholder, .wp-block-post-featured-image__overlay",
       __experimentalSkipSerialization: true,
       __experimentalDefaultControls: {
         color: true,
         radius: true,
         width: true
       }
+    },
+    filter: {
+      duotone: true
+    },
+    shadow: {
+      __experimentalSkipSerialization: true
     },
     html: false,
     spacing: {
@@ -41982,6 +42265,13 @@ const post_featured_image_metadata = {
     },
     interactivity: {
       clientNavigation: true
+    }
+  },
+  selectors: {
+    border: ".wp-block-post-featured-image img, .wp-block-post-featured-image .block-editor-media-placeholder, .wp-block-post-featured-image .wp-block-post-featured-image__overlay",
+    shadow: ".wp-block-post-featured-image img, .wp-block-post-featured-image .components-placeholder",
+    filter: {
+      duotone: ".wp-block-post-featured-image img, .wp-block-post-featured-image .wp-block-post-featured-image__placeholder, .wp-block-post-featured-image .components-placeholder__illustration, .wp-block-post-featured-image .components-placeholder::before"
     }
   },
   editorStyle: "wp-block-post-featured-image-editor",
@@ -42133,6 +42423,7 @@ function PostNavigationLinkEdit({
     className: `wp-block-post-navigation-link__arrow-previous is-arrow-${arrow}`
   }, displayArrow), (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
     tagName: "a",
+    identifier: "label",
     "aria-label": ariaLabel,
     placeholder: placeholder,
     value: label,
@@ -42779,6 +43070,7 @@ function PostTermsEdit({
   })), (0,external_React_namespaceObject.createElement)("div", {
     ...blockProps
   }, isLoading && hasPost && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Spinner, null), !isLoading && (isSelected || prefix) && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+    identifier: "prefix",
     allowedFormats: ALLOWED_FORMATS,
     className: "wp-block-post-terms__prefix",
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('Prefix'),
@@ -42795,6 +43087,7 @@ function PostTermsEdit({
   }, (0,external_wp_htmlEntities_namespaceObject.decodeEntities)(postTerm.name))).reduce((prev, curr) => (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, prev, (0,external_React_namespaceObject.createElement)("span", {
     className: "wp-block-post-terms__separator"
   }, separator || ' '), curr)), hasPost && !isLoading && !hasPostTerms && (selectedTerm?.labels?.no_terms || (0,external_wp_i18n_namespaceObject.__)('Term items not found.')), !isLoading && (isSelected || suffix) && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+    identifier: "suffix",
     allowedFormats: ALLOWED_FORMATS,
     className: "wp-block-post-terms__suffix",
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('Suffix'),
@@ -43219,7 +43512,7 @@ function PostTitleEdit({
       }
     }));
   }
-  return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, blockEditingMode === 'default' && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
+  return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, blockEditingMode === 'default' && (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
     group: "block"
   }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.HeadingLevelDropdown, {
     value: level,
@@ -43256,7 +43549,7 @@ function PostTitleEdit({
     onChange: newRel => setAttributes({
       rel: newRel
     })
-  })))), titleElement);
+  }))))), titleElement);
 }
 
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/post-title/deprecated.js
@@ -44702,14 +44995,16 @@ const useTaxonomies = postType => {
     const {
       getTaxonomies
     } = select(external_wp_coreData_namespaceObject.store);
-    const filteredTaxonomies = getTaxonomies({
+    return getTaxonomies({
       type: postType,
-      per_page: -1,
-      context: 'view'
+      per_page: -1
     });
-    return filteredTaxonomies;
   }, [postType]);
-  return taxonomies;
+  return (0,external_wp_element_namespaceObject.useMemo)(() => {
+    return taxonomies?.filter(({
+      visibility
+    }) => !!visibility?.publicly_queryable);
+  }, [taxonomies]);
 };
 
 /**
@@ -48035,6 +48330,106 @@ const migrateToQuoteV2 = attributes => {
     content
   })) : (0,external_wp_blocks_namespaceObject.createBlock)('core/paragraph')];
 };
+const deprecated_TEXT_ALIGN_OPTIONS = ['left', 'right', 'center'];
+
+// Migrate existing text alignment settings to the renamed attribute.
+const deprecated_migrateTextAlign = (attributes, innerBlocks) => {
+  const {
+    align,
+    ...rest
+  } = attributes;
+  // Check if there are valid alignments stored in the old attribute
+  // and assign them to the new attribute name.
+  const migratedAttributes = deprecated_TEXT_ALIGN_OPTIONS.includes(align) ? {
+    ...rest,
+    textAlign: align
+  } : attributes;
+  return [migratedAttributes, innerBlocks];
+};
+
+// Migrate the v2 blocks with style === `2`;
+const migrateLargeStyle = (attributes, innerBlocks) => {
+  return [{
+    ...attributes,
+    className: attributes.className ? attributes.className + ' is-style-large' : 'is-style-large'
+  }, innerBlocks];
+};
+
+// Version before the 'align' attribute was replaced with 'textAlign'.
+const quote_deprecated_v4 = {
+  attributes: {
+    value: {
+      type: 'string',
+      source: 'html',
+      selector: 'blockquote',
+      multiline: 'p',
+      default: '',
+      __experimentalRole: 'content'
+    },
+    citation: {
+      type: 'string',
+      source: 'html',
+      selector: 'cite',
+      default: '',
+      __experimentalRole: 'content'
+    },
+    align: {
+      type: 'string'
+    }
+  },
+  supports: {
+    anchor: true,
+    html: false,
+    __experimentalOnEnter: true,
+    __experimentalOnMerge: true,
+    typography: {
+      fontSize: true,
+      lineHeight: true,
+      __experimentalFontFamily: true,
+      __experimentalFontWeight: true,
+      __experimentalFontStyle: true,
+      __experimentalTextTransform: true,
+      __experimentalTextDecoration: true,
+      __experimentalLetterSpacing: true,
+      __experimentalDefaultControls: {
+        fontSize: true,
+        fontAppearance: true
+      }
+    },
+    color: {
+      gradients: true,
+      heading: true,
+      link: true,
+      __experimentalDefaultControls: {
+        background: true,
+        text: true
+      }
+    }
+  },
+  isEligible: ({
+    align
+  }) => deprecated_TEXT_ALIGN_OPTIONS.includes(align),
+  save({
+    attributes
+  }) {
+    const {
+      align,
+      citation
+    } = attributes;
+    const className = classnames_default()({
+      [`has-text-align-${align}`]: align
+    });
+    return (0,external_React_namespaceObject.createElement)("blockquote", {
+      ...external_wp_blockEditor_namespaceObject.useBlockProps.save({
+        className
+      })
+    }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InnerBlocks.Content, null), !external_wp_blockEditor_namespaceObject.RichText.isEmpty(citation) && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText.Content, {
+      tagName: "cite",
+      value: citation
+    }));
+  },
+  migrate: deprecated_migrateTextAlign
+};
 const quote_deprecated_v3 = {
   attributes: {
     value: {
@@ -48095,7 +48490,9 @@ const quote_deprecated_v3 = {
       value: citation
     }));
   },
-  migrate: migrateToQuoteV2
+  migrate(attributes) {
+    return deprecated_migrateTextAlign(...migrateToQuoteV2(attributes));
+  }
 };
 const quote_deprecated_v2 = {
   attributes: {
@@ -48116,7 +48513,9 @@ const quote_deprecated_v2 = {
       type: 'string'
     }
   },
-  migrate: migrateToQuoteV2,
+  migrate(attributes) {
+    return deprecated_migrateTextAlign(...migrateToQuoteV2(attributes));
+  },
   save({
     attributes
   }) {
@@ -48167,12 +48566,9 @@ const quote_deprecated_v1 = {
         style,
         ...restAttributes
       } = attributes;
-      return migrateToQuoteV2({
-        ...restAttributes,
-        className: attributes.className ? attributes.className + ' is-style-large' : 'is-style-large'
-      });
+      return deprecated_migrateTextAlign(...migrateLargeStyle(...migrateToQuoteV2(restAttributes)));
     }
-    return migrateToQuoteV2(attributes);
+    return deprecated_migrateTextAlign(...migrateToQuoteV2(attributes));
   },
   save({
     attributes
@@ -48226,11 +48622,9 @@ const quote_deprecated_v0 = {
         style,
         ...restAttributes
       } = attributes;
-      return migrateToQuoteV2({
-        ...restAttributes
-      });
+      return deprecated_migrateTextAlign(...migrateToQuoteV2(restAttributes));
     }
-    return migrateToQuoteV2(attributes);
+    return deprecated_migrateTextAlign(...migrateToQuoteV2(attributes));
   },
   save({
     attributes
@@ -48264,7 +48658,21 @@ const quote_deprecated_v0 = {
  *
  * See block-deprecation.md
  */
-/* harmony default export */ const quote_deprecated = ([quote_deprecated_v3, quote_deprecated_v2, quote_deprecated_v1, quote_deprecated_v0]);
+/* harmony default export */ const quote_deprecated = ([quote_deprecated_v4, quote_deprecated_v3, quote_deprecated_v2, quote_deprecated_v1, quote_deprecated_v0]);
+
+;// CONCATENATED MODULE: ./packages/icons/build-module/library/verse.js
+
+/**
+ * WordPress dependencies
+ */
+
+const verse = (0,external_React_namespaceObject.createElement)(external_wp_primitives_namespaceObject.SVG, {
+  viewBox: "0 0 24 24",
+  xmlns: "http://www.w3.org/2000/svg"
+}, (0,external_React_namespaceObject.createElement)(external_wp_primitives_namespaceObject.Path, {
+  d: "M17.8 2l-.9.3c-.1 0-3.6 1-5.2 2.1C10 5.5 9.3 6.5 8.9 7.1c-.6.9-1.7 4.7-1.7 6.3l-.9 2.3c-.2.4 0 .8.4 1 .1 0 .2.1.3.1.3 0 .6-.2.7-.5l.6-1.5c.3 0 .7-.1 1.2-.2.7-.1 1.4-.3 2.2-.5.8-.2 1.6-.5 2.4-.8.7-.3 1.4-.7 1.9-1.2s.8-1.2 1-1.9c.2-.7.3-1.6.4-2.4.1-.8.1-1.7.2-2.5 0-.8.1-1.5.2-2.1V2zm-1.9 5.6c-.1.8-.2 1.5-.3 2.1-.2.6-.4 1-.6 1.3-.3.3-.8.6-1.4.9-.7.3-1.4.5-2.2.8-.6.2-1.3.3-1.8.4L15 7.5c.3-.3.6-.7 1-1.1 0 .4 0 .8-.1 1.2zM6 20h8v-1.5H6V20z"
+}));
+/* harmony default export */ const library_verse = (verse);
 
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/quote/edit.js
 
@@ -48287,6 +48695,7 @@ const quote_deprecated_v0 = {
 /**
  * Internal dependencies
  */
+
 
 const edit_isWebPlatform = external_wp_element_namespaceObject.Platform.OS === 'web';
 const quote_edit_TEMPLATE = [['core/paragraph', {}]];
@@ -48330,23 +48739,16 @@ function QuoteEdit({
   insertBlocksAfter,
   clientId,
   className,
-  style
+  style,
+  isSelected
 }) {
   const {
-    align,
-    citation
+    textAlign
   } = attributes;
   edit_useMigrateOnLoad(attributes, clientId);
-  const hasSelection = (0,external_wp_data_namespaceObject.useSelect)(select => {
-    const {
-      isBlockSelected,
-      hasSelectedInnerBlock
-    } = select(external_wp_blockEditor_namespaceObject.store);
-    return hasSelectedInnerBlock(clientId) || isBlockSelected(clientId);
-  }, []);
   const blockProps = (0,external_wp_blockEditor_namespaceObject.useBlockProps)({
     className: classnames_default()(className, {
-      [`has-text-align-${align}`]: align
+      [`has-text-align-${textAlign}`]: textAlign
     }),
     ...(!edit_isWebPlatform && {
       style
@@ -48355,41 +48757,42 @@ function QuoteEdit({
   const innerBlocksProps = (0,external_wp_blockEditor_namespaceObject.useInnerBlocksProps)(blockProps, {
     template: quote_edit_TEMPLATE,
     templateInsertUpdatesSelection: true,
-    __experimentalCaptureToolbars: true
+    __experimentalCaptureToolbars: true,
+    renderAppender: false
   });
   return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
     group: "block"
   }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.AlignmentControl, {
-    value: align,
+    value: textAlign,
     onChange: nextAlign => {
       setAttributes({
-        align: nextAlign
+        textAlign: nextAlign
       });
     }
   })), (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.BlockQuotation, {
     ...innerBlocksProps
-  }, innerBlocksProps.children, (!external_wp_blockEditor_namespaceObject.RichText.isEmpty(citation) || hasSelection) && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
-    identifier: "citation",
+  }, innerBlocksProps.children, (0,external_React_namespaceObject.createElement)(Caption, {
+    attributeKey: "citation",
     tagName: edit_isWebPlatform ? 'cite' : undefined,
-    style: {
+    style: edit_isWebPlatform && {
       display: 'block'
     },
-    value: citation,
-    onChange: nextCitation => {
-      setAttributes({
-        citation: nextCitation
-      });
-    },
+    isSelected: isSelected,
+    attributes: attributes,
+    setAttributes: setAttributes,
     __unstableMobileNoFocusOnMount: true,
-    "aria-label": (0,external_wp_i18n_namespaceObject.__)('Quote citation'),
+    icon: library_verse,
+    label: (0,external_wp_i18n_namespaceObject.__)('Quote citation'),
     placeholder:
     // translators: placeholder text used for the
     // citation
     (0,external_wp_i18n_namespaceObject.__)('Add citation'),
+    addLabel: (0,external_wp_i18n_namespaceObject.__)('Add citation'),
+    removeLabel: (0,external_wp_i18n_namespaceObject.__)('Remove citation'),
     className: "wp-block-quote__citation",
-    __unstableOnSplitAtEnd: () => insertBlocksAfter((0,external_wp_blocks_namespaceObject.createBlock)((0,external_wp_blocks_namespaceObject.getDefaultBlockName)())),
+    insertBlocksAfter: insertBlocksAfter,
     ...(!edit_isWebPlatform ? {
-      textAlign: align
+      textAlign
     } : {})
   })));
 }
@@ -48409,11 +48812,11 @@ function quote_save_save({
   attributes
 }) {
   const {
-    align,
+    textAlign,
     citation
   } = attributes;
   const className = classnames_default()({
-    [`has-text-align-${align}`]: align
+    [`has-text-align-${textAlign}`]: textAlign
   });
   return (0,external_React_namespaceObject.createElement)("blockquote", {
     ...external_wp_blockEditor_namespaceObject.useBlockProps.save({
@@ -48583,7 +48986,7 @@ const quote_metadata = {
       selector: "cite",
       __experimentalRole: "content"
     },
-    align: {
+    textAlign: {
       type: "string"
     }
   },
@@ -48710,9 +49113,26 @@ const {
   useLayoutClasses
 } = unlock(external_wp_blockEditor_namespaceObject.privateApis);
 const {
-  PARTIAL_SYNCING_SUPPORTED_BLOCKS
+  isOverridableBlock
 } = unlock(external_wp_patterns_namespaceObject.privateApis);
 const fullAlignments = ['full', 'wide', 'left', 'right'];
+function getLegacyIdMap(blocks, content, nameCount = {}) {
+  let idToClientIdMap = {};
+  for (const block of blocks) {
+    if (block?.innerBlocks?.length) {
+      idToClientIdMap = {
+        ...idToClientIdMap,
+        ...getLegacyIdMap(block.innerBlocks, content, nameCount)
+      };
+    }
+    const id = block.attributes.metadata?.id;
+    const clientId = block.clientId;
+    if (id && content?.[id]) {
+      idToClientIdMap[clientId] = id;
+    }
+  }
+  return idToClientIdMap;
+}
 const useInferredLayout = (blocks, parentLayout) => {
   const initialInferredAlignmentRef = (0,external_wp_element_namespaceObject.useRef)();
   return (0,external_wp_element_namespaceObject.useMemo)(() => {
@@ -48737,35 +49157,35 @@ const useInferredLayout = (blocks, parentLayout) => {
     };
   }, [blocks, parentLayout]);
 };
-function hasOverridableAttributes(block) {
-  return Object.keys(PARTIAL_SYNCING_SUPPORTED_BLOCKS).includes(block.name) && !!block.attributes.metadata?.bindings && Object.values(block.attributes.metadata.bindings).some(binding => binding.source === 'core/pattern-overrides');
-}
 function hasOverridableBlocks(blocks) {
   return blocks.some(block => {
-    if (hasOverridableAttributes(block)) return true;
+    if (isOverridableBlock(block)) return true;
     return hasOverridableBlocks(block.innerBlocks);
   });
 }
 function getOverridableAttributes(block) {
   return Object.entries(block.attributes.metadata.bindings).filter(([, binding]) => binding.source === 'core/pattern-overrides').map(([attributeKey]) => attributeKey);
 }
-function applyInitialContentValuesToInnerBlocks(blocks, content = {}, defaultValues) {
+function applyInitialContentValuesToInnerBlocks(blocks, content = {}, defaultValues, legacyIdMap) {
   return blocks.map(block => {
-    const innerBlocks = applyInitialContentValuesToInnerBlocks(block.innerBlocks, content, defaultValues);
-    const blockId = block.attributes.metadata?.id;
-    if (!hasOverridableAttributes(block) || !blockId) return {
-      ...block,
-      innerBlocks
-    };
+    var _legacyIdMap$block$cl;
+    const innerBlocks = applyInitialContentValuesToInnerBlocks(block.innerBlocks, content, defaultValues, legacyIdMap);
+    const metadataName = (_legacyIdMap$block$cl = legacyIdMap?.[block.clientId]) !== null && _legacyIdMap$block$cl !== void 0 ? _legacyIdMap$block$cl : block.attributes.metadata?.name;
+    if (!metadataName || !isOverridableBlock(block)) {
+      return {
+        ...block,
+        innerBlocks
+      };
+    }
     const attributes = getOverridableAttributes(block);
     const newAttributes = {
       ...block.attributes
     };
     for (const attributeKey of attributes) {
-      var _defaultValues$blockI;
-      (_defaultValues$blockI = defaultValues[blockId]) !== null && _defaultValues$blockI !== void 0 ? _defaultValues$blockI : defaultValues[blockId] = {};
-      defaultValues[blockId][attributeKey] = block.attributes[attributeKey];
-      const contentValues = content[blockId]?.values;
+      var _defaultValues$metada;
+      (_defaultValues$metada = defaultValues[metadataName]) !== null && _defaultValues$metada !== void 0 ? _defaultValues$metada : defaultValues[metadataName] = {};
+      defaultValues[metadataName][attributeKey] = block.attributes[attributeKey];
+      const contentValues = content[metadataName];
       if (contentValues?.[attributeKey] !== undefined) {
         newAttributes[attributeKey] = contentValues[attributeKey];
       }
@@ -48783,25 +49203,27 @@ function isAttributeEqual(attribute1, attribute2) {
   }
   return attribute1 === attribute2;
 }
-function getContentValuesFromInnerBlocks(blocks, defaultValues) {
+function getContentValuesFromInnerBlocks(blocks, defaultValues, legacyIdMap) {
   /** @type {Record<string, { values: Record<string, unknown>}>} */
   const content = {};
   for (const block of blocks) {
+    var _legacyIdMap$block$cl2;
     if (block.name === block_name) continue;
-    Object.assign(content, getContentValuesFromInnerBlocks(block.innerBlocks, defaultValues));
-    const blockId = block.attributes.metadata?.id;
-    if (!hasOverridableAttributes(block) || !blockId) continue;
+    if (block.innerBlocks.length) {
+      Object.assign(content, getContentValuesFromInnerBlocks(block.innerBlocks, defaultValues, legacyIdMap));
+    }
+    const metadataName = (_legacyIdMap$block$cl2 = legacyIdMap?.[block.clientId]) !== null && _legacyIdMap$block$cl2 !== void 0 ? _legacyIdMap$block$cl2 : block.attributes.metadata?.name;
+    if (!metadataName || !isOverridableBlock(block)) {
+      continue;
+    }
     const attributes = getOverridableAttributes(block);
     for (const attributeKey of attributes) {
-      if (!isAttributeEqual(block.attributes[attributeKey], defaultValues[blockId][attributeKey])) {
-        var _content$blockId;
-        (_content$blockId = content[blockId]) !== null && _content$blockId !== void 0 ? _content$blockId : content[blockId] = {
-          values: {},
-          blockName: block.name
-        };
+      if (!isAttributeEqual(block.attributes[attributeKey], defaultValues?.[metadataName]?.[attributeKey])) {
+        var _content$metadataName;
+        (_content$metadataName = content[metadataName]) !== null && _content$metadataName !== void 0 ? _content$metadataName : content[metadataName] = {};
         // TODO: We need a way to represent `undefined` in the serialized overrides.
         // Also see: https://github.com/WordPress/gutenberg/pull/57249#discussion_r1452987871
-        content[blockId].values[attributeKey] = block.attributes[attributeKey] === undefined ?
+        content[metadataName][attributeKey] = block.attributes[attributeKey] === undefined ?
         // TODO: We use an empty string to represent undefined for now until
         // we support a richer format for overrides and the block binding API.
         // Currently only the `linkTarget` attribute of `core/button` is affected.
@@ -48813,7 +49235,7 @@ function getContentValuesFromInnerBlocks(blocks, defaultValues) {
 }
 function setBlockEditMode(setEditMode, blocks, mode) {
   blocks.forEach(block => {
-    const editMode = mode || (hasOverridableAttributes(block) ? 'contentOnly' : 'disabled');
+    const editMode = mode || (isOverridableBlock(block) ? 'contentOnly' : 'disabled');
     setEditMode(block.clientId, editMode);
     setBlockEditMode(setEditMode, block.innerBlocks,
     // Disable editing for nested patterns.
@@ -48858,7 +49280,8 @@ function ReusableBlockEdit({
     userCanEdit,
     getBlockEditingMode,
     onNavigateToEntityRecord,
-    editingMode
+    editingMode,
+    hasPatternOverridesSource
   } = (0,external_wp_data_namespaceObject.useSelect)(select => {
     const {
       canUser
@@ -48868,6 +49291,9 @@ function ReusableBlockEdit({
       getSettings,
       getBlockEditingMode: _getBlockEditingMode
     } = select(external_wp_blockEditor_namespaceObject.store);
+    const {
+      getBlockBindingsSource
+    } = unlock(select(external_wp_blocks_namespaceObject.store));
     const blocks = getBlocks(patternClientId);
     const canEdit = canUser('update', 'blocks', ref);
 
@@ -48877,7 +49303,8 @@ function ReusableBlockEdit({
       userCanEdit: canEdit,
       getBlockEditingMode: _getBlockEditingMode,
       onNavigateToEntityRecord: getSettings().onNavigateToEntityRecord,
-      editingMode: _getBlockEditingMode(patternClientId)
+      editingMode: _getBlockEditingMode(patternClientId),
+      hasPatternOverridesSource: !!getBlockBindingsSource('core/pattern-overrides')
     };
   }, [patternClientId, ref]);
 
@@ -48885,29 +49312,33 @@ function ReusableBlockEdit({
   (0,external_wp_element_namespaceObject.useEffect)(() => {
     setBlockEditMode(setBlockEditingMode, innerBlocks,
     // Disable editing if the pattern itself is disabled.
-    editingMode === 'disabled' ? 'disabled' : undefined);
-  }, [editingMode, innerBlocks, setBlockEditingMode]);
-  const canOverrideBlocks = (0,external_wp_element_namespaceObject.useMemo)(() => hasOverridableBlocks(innerBlocks), [innerBlocks]);
+    editingMode === 'disabled' || !hasPatternOverridesSource ? 'disabled' : undefined);
+  }, [editingMode, innerBlocks, setBlockEditingMode, hasPatternOverridesSource]);
+  const canOverrideBlocks = (0,external_wp_element_namespaceObject.useMemo)(() => hasPatternOverridesSource && hasOverridableBlocks(innerBlocks), [hasPatternOverridesSource, innerBlocks]);
   const initialBlocks = (0,external_wp_element_namespaceObject.useMemo)(() => {
     var _editedRecord$blocks$;
     return (// Clone the blocks to generate new client IDs.
       (_editedRecord$blocks$ = editedRecord.blocks?.map(block => (0,external_wp_blocks_namespaceObject.cloneBlock)(block))) !== null && _editedRecord$blocks$ !== void 0 ? _editedRecord$blocks$ : editedRecord.content && typeof editedRecord.content !== 'function' ? (0,external_wp_blocks_namespaceObject.parse)(editedRecord.content) : []
     );
   }, [editedRecord.blocks, editedRecord.content]);
+  const legacyIdMap = (0,external_wp_element_namespaceObject.useRef)({});
 
   // Apply the initial overrides from the pattern block to the inner blocks.
   (0,external_wp_element_namespaceObject.useEffect)(() => {
+    // Build a map of clientIds to the old nano id system to provide back compat.
+    legacyIdMap.current = getLegacyIdMap(initialBlocks, initialContent.current);
     defaultContent.current = {};
     const originalEditingMode = getBlockEditingMode(patternClientId);
     // Replace the contents of the blocks with the overrides.
     registry.batch(() => {
       setBlockEditingMode(patternClientId, 'default');
       syncDerivedUpdates(() => {
-        replaceInnerBlocks(patternClientId, applyInitialContentValuesToInnerBlocks(initialBlocks, initialContent.current, defaultContent.current));
+        const blocks = hasPatternOverridesSource ? applyInitialContentValuesToInnerBlocks(initialBlocks, initialContent.current, defaultContent.current, legacyIdMap.current) : initialBlocks;
+        replaceInnerBlocks(patternClientId, blocks);
       });
       setBlockEditingMode(patternClientId, originalEditingMode);
     });
-  }, [__unstableMarkNextChangeAsNotPersistent, patternClientId, initialBlocks, replaceInnerBlocks, registry, getBlockEditingMode, setBlockEditingMode, syncDerivedUpdates]);
+  }, [hasPatternOverridesSource, __unstableMarkNextChangeAsNotPersistent, patternClientId, initialBlocks, replaceInnerBlocks, registry, getBlockEditingMode, setBlockEditingMode, syncDerivedUpdates]);
   const {
     alignment,
     layout
@@ -48929,6 +49360,9 @@ function ReusableBlockEdit({
   // Sync the `content` attribute from the updated blocks to the pattern block.
   // `syncDerivedUpdates` is used here to avoid creating an additional undo level.
   (0,external_wp_element_namespaceObject.useEffect)(() => {
+    if (!hasPatternOverridesSource) {
+      return;
+    }
     const {
       getBlocks
     } = registry.select(external_wp_blockEditor_namespaceObject.store);
@@ -48939,12 +49373,12 @@ function ReusableBlockEdit({
         prevBlocks = blocks;
         syncDerivedUpdates(() => {
           setAttributes({
-            content: getContentValuesFromInnerBlocks(blocks, defaultContent.current)
+            content: getContentValuesFromInnerBlocks(blocks, defaultContent.current, legacyIdMap.current)
           });
         });
       }
     }, external_wp_blockEditor_namespaceObject.store);
-  }, [syncDerivedUpdates, patternClientId, registry, setAttributes]);
+  }, [hasPatternOverridesSource, syncDerivedUpdates, patternClientId, registry, setAttributes]);
   const handleEditOriginal = () => {
     onNavigateToEntityRecord({
       postId: ref,
@@ -48982,7 +49416,73 @@ function ReusableBlockEdit({
 }
 
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/block/deprecated.js
-// v1: Migrate and rename the `overrides` attribute to the `content` attribute.
+const isObject = obj => typeof obj === 'object' && !Array.isArray(obj) && obj !== null;
+
+// v2: Migrate to a more condensed version of the 'content' attribute attribute.
+const block_deprecated_v2 = {
+  attributes: {
+    ref: {
+      type: 'number'
+    },
+    content: {
+      type: 'object'
+    }
+  },
+  supports: {
+    customClassName: false,
+    html: false,
+    inserter: false,
+    renaming: false
+  },
+  // Force this deprecation to run whenever there's a values sub-property that's an object.
+  //
+  // This could fail in the future if a block ever has binding to a `values` attribute.
+  // Some extra protection is added to ensure `values` is an object, but this only reduces
+  // the likelihood, it doesn't solve it completely.
+  isEligible({
+    content
+  }) {
+    return !!content && Object.keys(content).every(contentKey => content[contentKey].values && isObject(content[contentKey].values));
+  },
+  /*
+   * Old attribute format:
+   * content: {
+   *     "V98q_x": {
+   * 	   		// The attribute values are now stored as a 'values' sub-property.
+   *         values: { content: 'My content value' },
+   * 	       // ... additional metadata, like the block name can be stored here.
+   *     }
+   * }
+   *
+   * New attribute format:
+   * content: {
+   *     "V98q_x": {
+   *         content: 'My content value',
+   *     }
+   * }
+   */
+  migrate(attributes) {
+    const {
+      content,
+      ...retainedAttributes
+    } = attributes;
+    if (content && Object.keys(content).length) {
+      const updatedContent = {
+        ...content
+      };
+      for (const contentKey in content) {
+        updatedContent[contentKey] = content[contentKey].values;
+      }
+      return {
+        ...retainedAttributes,
+        content: updatedContent
+      };
+    }
+    return attributes;
+  }
+};
+
+// v1: Rename the `overrides` attribute to the `content` attribute.
 const block_deprecated_v1 = {
   attributes: {
     ref: {
@@ -49009,16 +49509,12 @@ const block_deprecated_v1 = {
    * overrides: {
    *     // An key is an id that represents a block.
    *     // The values are the attribute values of the block.
-   *     "V98q_x": { content: 'dwefwefwefwe' }
+   *     "V98q_x": { content: 'My content value' }
    * }
    *
    * New attribute format:
    * content: {
-   *     "V98q_x": {
-   * 	   		// The attribute values are now stored as a 'values' sub-property.
-   *         values: { content: 'dwefwefwefwe' },
-   * 	       // ... additional metadata, like the block name can be stored here.
-   *     }
+   *     "V98q_x": { content: 'My content value' }
    * }
    *
    */
@@ -49029,9 +49525,7 @@ const block_deprecated_v1 = {
     } = attributes;
     const content = {};
     Object.keys(overrides).forEach(id => {
-      content[id] = {
-        values: overrides[id]
-      };
+      content[id] = overrides[id];
     });
     return {
       ...retainedAttributes,
@@ -49039,7 +49533,7 @@ const block_deprecated_v1 = {
     };
   }
 };
-/* harmony default export */ const block_deprecated = ([block_deprecated_v1]);
+/* harmony default export */ const block_deprecated = ([block_deprecated_v2, block_deprecated_v1]);
 
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/block/index.js
 /**
@@ -49138,6 +49632,7 @@ function ReadMore({
     }),
     checked: linkTarget === '_blank'
   }))), (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+    identifier: "content",
     tagName: "a",
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('“Read more” link text'),
     placeholder: (0,external_wp_i18n_namespaceObject.__)('Read more'),
@@ -49869,6 +50364,7 @@ function SearchEdit({
     }, (0,external_React_namespaceObject.createElement)(build_module_icon, {
       icon: library_search
     })), !buttonUseIcon && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+      identifier: "buttonText",
       className: buttonClasses,
       style: buttonStyles,
       "aria-label": (0,external_wp_i18n_namespaceObject.__)('Button text'),
@@ -49904,7 +50400,7 @@ function SearchEdit({
     },
     className: buttonUseIcon ? 'is-pressed' : undefined
   }))), (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.PanelBody, {
-    title: (0,external_wp_i18n_namespaceObject.__)('Display Settings')
+    title: (0,external_wp_i18n_namespaceObject.__)('Settings')
   }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.BaseControl, {
     label: (0,external_wp_i18n_namespaceObject.__)('Width'),
     id: unitControlInputId
@@ -49996,6 +50492,7 @@ function SearchEdit({
   return (0,external_React_namespaceObject.createElement)("div", {
     ...blockProps
   }, controls, showLabel && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText, {
+    identifier: "label",
     className: labelClassnames,
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('Label text'),
     placeholder: (0,external_wp_i18n_namespaceObject.__)('Add label…'),
@@ -50882,11 +51379,16 @@ const SiteLogo = ({
       });
     }
   }, imgWrapper);
+
+  // Support the previous location for the Site Icon settings. To be removed
+  // when the required WP core version for Gutenberg is >= 6.5.0.
+  const shouldUseNewUrl = !window?.__experimentalUseCustomizerSiteLogoUrl;
+  const siteIconSettingsUrl = shouldUseNewUrl ? siteUrl + '/wp-admin/options-general.php' : siteUrl + '/wp-admin/customize.php?autofocus[section]=title_tagline';
   const syncSiteIconHelpText = (0,external_wp_element_namespaceObject.createInterpolateElement)((0,external_wp_i18n_namespaceObject.__)('Site Icons are what you see in browser tabs, bookmark bars, and within the WordPress mobile apps. To use a custom icon that is different from your site logo, use the <a>Site Icon settings</a>.'), {
     a:
     // eslint-disable-next-line jsx-a11y/anchor-has-content
     (0,external_React_namespaceObject.createElement)("a", {
-      href: siteUrl + '/wp-admin/customize.php?autofocus[section]=title_tagline',
+      href: siteIconSettingsUrl,
       target: "_blank",
       rel: "noopener noreferrer"
     })
@@ -50921,7 +51423,7 @@ const SiteLogo = ({
     checked: linkTarget === '_blank'
   })), canUserEdit && (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ToggleControl, {
     __nextHasNoMarginBottom: true,
-    label: (0,external_wp_i18n_namespaceObject.__)('Use as site icon'),
+    label: (0,external_wp_i18n_namespaceObject.__)('Use as Site Icon'),
     onChange: value => {
       setAttributes({
         shouldSyncIcon: value
@@ -51342,13 +51844,15 @@ const site_logo_init = () => initBlock({
 
 
 
+const HEADING_LEVELS = [0, 1, 2, 3, 4, 5, 6];
 function SiteTaglineEdit({
   attributes,
   setAttributes,
   insertBlocksAfter
 }) {
   const {
-    textAlign
+    textAlign,
+    level
   } = attributes;
   const {
     canUserEdit,
@@ -51367,6 +51871,7 @@ function SiteTaglineEdit({
       tagline: canEdit ? settings?.description : readOnlySettings?.description
     };
   }, []);
+  const TagName = level === 0 ? 'p' : `h${level}`;
   const {
     editEntityRecord
   } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_coreData_namespaceObject.store);
@@ -51386,17 +51891,23 @@ function SiteTaglineEdit({
     onChange: setTagline,
     "aria-label": (0,external_wp_i18n_namespaceObject.__)('Site tagline text'),
     placeholder: (0,external_wp_i18n_namespaceObject.__)('Write site tagline…'),
-    tagName: "p",
+    tagName: TagName,
     value: tagline,
     disableLineBreaks: true,
     __unstableOnSplitAtEnd: () => insertBlocksAfter((0,external_wp_blocks_namespaceObject.createBlock)((0,external_wp_blocks_namespaceObject.getDefaultBlockName)())),
     ...blockProps
-  }) : (0,external_React_namespaceObject.createElement)("p", {
+  }) : (0,external_React_namespaceObject.createElement)(TagName, {
     ...blockProps
   }, tagline || (0,external_wp_i18n_namespaceObject.__)('Site Tagline placeholder'));
   return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
     group: "block"
-  }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.AlignmentControl, {
+  }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.HeadingLevelDropdown, {
+    options: HEADING_LEVELS,
+    value: level,
+    onChange: newLevel => setAttributes({
+      level: newLevel
+    })
+  }), (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.AlignmentControl, {
     onChange: newAlign => setAttributes({
       textAlign: newAlign
     }),
@@ -51487,6 +51998,10 @@ const site_tagline_metadata = {
   attributes: {
     textAlign: {
       type: "string"
+    },
+    level: {
+      type: "number",
+      "default": 0
     }
   },
   example: {},
@@ -51559,7 +52074,7 @@ const mapMarker = (0,external_React_namespaceObject.createElement)(external_wp_p
 }));
 /* harmony default export */ const map_marker = (mapMarker);
 
-;// CONCATENATED MODULE: ./packages/block-library/build-module/site-title/edit/index.js
+;// CONCATENATED MODULE: ./packages/block-library/build-module/site-title/edit.js
 
 /**
  * External dependencies
@@ -51576,7 +52091,7 @@ const mapMarker = (0,external_React_namespaceObject.createElement)(external_wp_p
 
 
 
-const HEADING_LEVELS = [0, 1, 2, 3, 4, 5, 6];
+const edit_HEADING_LEVELS = [0, 1, 2, 3, 4, 5, 6];
 function SiteTitleEdit({
   attributes,
   setAttributes,
@@ -51641,7 +52156,7 @@ function SiteTitleEdit({
   return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
     group: "block"
   }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.HeadingLevelDropdown, {
-    options: HEADING_LEVELS,
+    options: edit_HEADING_LEVELS,
     value: level,
     onChange: newLevel => setAttributes({
       level: newLevel
@@ -51878,10 +52393,9 @@ const share = (0,external_React_namespaceObject.createElement)(external_wp_primi
  */
 
 const keyboardReturn = (0,external_React_namespaceObject.createElement)(external_wp_primitives_namespaceObject.SVG, {
-  xmlns: "http://www.w3.org/2000/svg",
-  viewBox: "-2 -2 24 24"
+  xmlns: "http://www.w3.org/2000/svg"
 }, (0,external_React_namespaceObject.createElement)(external_wp_primitives_namespaceObject.Path, {
-  d: "M6.734 16.106l2.176-2.38-1.093-1.028-3.846 4.158 3.846 4.157 1.093-1.027-2.176-2.38h2.811c1.125 0 2.25.03 3.374 0 1.428-.001 3.362-.25 4.963-1.277 1.66-1.065 2.868-2.906 2.868-5.859 0-2.479-1.327-4.896-3.65-5.93-1.82-.813-3.044-.8-4.806-.788l-.567.002v1.5c.184 0 .368 0 .553-.002 1.82-.007 2.704-.014 4.21.657 1.854.827 2.76 2.657 2.76 4.561 0 2.472-.973 3.824-2.178 4.596-1.258.807-2.864 1.04-4.163 1.04h-.02c-1.115.03-2.229 0-3.344 0H6.734z"
+  d: "m6.734 16.106 2.176-2.38-1.093-1.028-3.846 4.158 3.846 4.158 1.093-1.028-2.176-2.38h2.811c1.125 0 2.25.03 3.374 0 1.428-.001 3.362-.25 4.963-1.277 1.66-1.065 2.868-2.906 2.868-5.859 0-2.479-1.327-4.896-3.65-5.93-1.82-.813-3.044-.8-4.806-.788l-.567.002v1.5c.184 0 .368 0 .553-.002 1.82-.007 2.704-.014 4.21.657 1.854.827 2.76 2.657 2.76 4.561 0 2.472-.973 3.824-2.178 4.596-1.258.807-2.864 1.04-4.163 1.04h-.02c-1.115.03-2.229 0-3.344 0H6.734Z"
 }));
 /* harmony default export */ const keyboard_return = (keyboardReturn);
 
@@ -52274,7 +52788,7 @@ const MediumIcon = () => (0,external_React_namespaceObject.createElement)(extern
   viewBox: "0 0 24 24",
   version: "1.1"
 }, (0,external_React_namespaceObject.createElement)(external_wp_primitives_namespaceObject.Path, {
-  d: "M20.962,7.257l-5.457,8.867l-3.923-6.375l3.126-5.08c0.112-0.182,0.319-0.286,0.527-0.286c0.05,0,0.1,0.008,0.149,0.02 c0.039,0.01,0.078,0.023,0.114,0.041l5.43,2.715l0.006,0.003c0.004,0.002,0.007,0.006,0.011,0.008 C20.971,7.191,20.98,7.227,20.962,7.257z M9.86,8.592v5.783l5.14,2.57L9.86,8.592z M15.772,17.331l4.231,2.115 C20.554,19.721,21,19.529,21,19.016V8.835L15.772,17.331z M8.968,7.178L3.665,4.527C3.569,4.479,3.478,4.456,3.395,4.456 C3.163,4.456,3,4.636,3,4.938v11.45c0,0.306,0.224,0.669,0.498,0.806l4.671,2.335c0.12,0.06,0.234,0.088,0.337,0.088 c0.29,0,0.494-0.225,0.494-0.602V7.231C9,7.208,8.988,7.188,8.968,7.178z"
+  d: "M13.2,12c0,3-2.4,5.4-5.3,5.4S2.6,15,2.6,12s2.4-5.4,5.3-5.4S13.2,9,13.2,12 M19.1,12c0,2.8-1.2,5-2.7,5s-2.7-2.3-2.7-5s1.2-5,2.7-5C17.9,7,19.1,9.2,19.1,12 M21.4,12c0,2.5-0.4,4.5-0.9,4.5c-0.5,0-0.9-2-0.9-4.5s0.4-4.5,0.9-4.5C21,7.5,21.4,9.5,21.4,12"
 }));
 
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/social-link/icons/patreon.js
@@ -52334,7 +52848,7 @@ const RedditIcon = () => (0,external_React_namespaceObject.createElement)(extern
   viewBox: "0 0 24 24",
   version: "1.1"
 }, (0,external_React_namespaceObject.createElement)(external_wp_primitives_namespaceObject.Path, {
-  d: "M22 12.068a2.184 2.184 0 0 0-2.186-2.186c-.592 0-1.13.233-1.524.609-1.505-1.075-3.566-1.774-5.86-1.864l1.004-4.695 3.261.699A1.56 1.56 0 1 0 18.255 3c-.61-.001-1.147.357-1.398.877l-3.638-.77a.382.382 0 0 0-.287.053.348.348 0 0 0-.161.251l-1.112 5.233c-2.33.072-4.426.77-5.95 1.864a2.201 2.201 0 0 0-1.523-.61 2.184 2.184 0 0 0-.896 4.176c-.036.215-.053.43-.053.663 0 3.37 3.924 6.111 8.763 6.111s8.763-2.724 8.763-6.11c0-.216-.017-.449-.053-.664A2.207 2.207 0 0 0 22 12.068Zm-15.018 1.56a1.56 1.56 0 0 1 3.118 0c0 .86-.699 1.558-1.559 1.558-.86.018-1.559-.699-1.559-1.559Zm8.728 4.139c-1.076 1.075-3.119 1.147-3.71 1.147-.61 0-2.652-.09-3.71-1.147a.4.4 0 0 1 0-.573.4.4 0 0 1 .574 0c.68.68 2.114.914 3.136.914 1.022 0 2.473-.233 3.136-.914a.4.4 0 0 1 .574 0 .436.436 0 0 1 0 .573Zm-.287-2.563a1.56 1.56 0 0 1 0-3.118c.86 0 1.56.699 1.56 1.56 0 .841-.7 1.558-1.56 1.558Z"
+  d: "M5.27 9.221A2.775 2.775 0 0 0 2.498 11.993a2.785 2.785 0 0 0 1.6 2.511 5.337 5.337 0 0 0 2.374 4.11 9.386 9.386 0 0 0 5.539 1.7 9.386 9.386 0 0 0 5.541-1.7 5.331 5.331 0 0 0 2.372-4.114 2.787 2.787 0 0 0 1.583-2.5 2.775 2.775 0 0 0-2.772-2.772 2.742 2.742 0 0 0-1.688.574 9.482 9.482 0 0 0-4.637-1.348v-.008a2.349 2.349 0 0 1 2.011-2.316 1.97 1.97 0 0 0 1.926 1.521 1.98 1.98 0 0 0 1.978-1.978 1.98 1.98 0 0 0-1.978-1.978 1.985 1.985 0 0 0-1.938 1.578 3.183 3.183 0 0 0-2.849 3.172v.011a9.463 9.463 0 0 0-4.59 1.35 2.741 2.741 0 0 0-1.688-.574Zm6.736 9.1a3.162 3.162 0 0 1-2.921-1.944.215.215 0 0 1 .014-.2.219.219 0 0 1 .168-.106 27.327 27.327 0 0 1 2.74-.133 27.357 27.357 0 0 1 2.74.133.219.219 0 0 1 .168.106.215.215 0 0 1 .014.2 3.158 3.158 0 0 1-2.921 1.944Zm3.743-3.157a1.265 1.265 0 0 1-1.4-1.371 1.954 1.954 0 0 1 .482-1.442 1.15 1.15 0 0 1 .842-.379 1.7 1.7 0 0 1 1.49 1.777 1.323 1.323 0 0 1-.325 1.015 1.476 1.476 0 0 1-1.089.4Zm-7.485 0a1.476 1.476 0 0 1-1.086-.4 1.323 1.323 0 0 1-.325-1.016 1.7 1.7 0 0 1 1.49-1.777 1.151 1.151 0 0 1 .843.379 1.951 1.951 0 0 1 .481 1.441 1.276 1.276 0 0 1-1.403 1.373Z"
 }));
 
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/social-link/icons/skype.js
@@ -53069,7 +53583,7 @@ const SocialLinkEdit = ({
     help: (0,external_wp_i18n_namespaceObject.__)('Briefly describe the link to help screen reader users.'),
     value: label || '',
     onChange: value => setAttributes({
-      label: value
+      label: value || undefined
     })
   })))), (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, {
     group: "advanced"
@@ -54279,8 +54793,246 @@ const oldColors = {
   'subtle-pale-pink': '#fcf0ef'
 };
 
+// Fixed width table cells on by default.
+const v4Query = {
+  content: {
+    type: 'rich-text',
+    source: 'rich-text'
+  },
+  tag: {
+    type: 'string',
+    default: 'td',
+    source: 'tag'
+  },
+  scope: {
+    type: 'string',
+    source: 'attribute',
+    attribute: 'scope'
+  },
+  align: {
+    type: 'string',
+    source: 'attribute',
+    attribute: 'data-align'
+  },
+  colspan: {
+    type: 'string',
+    source: 'attribute',
+    attribute: 'colspan'
+  },
+  rowspan: {
+    type: 'string',
+    source: 'attribute',
+    attribute: 'rowspan'
+  }
+};
+const table_deprecated_v4 = {
+  attributes: {
+    hasFixedLayout: {
+      type: 'boolean',
+      default: false
+    },
+    caption: {
+      type: 'rich-text',
+      source: 'rich-text',
+      selector: 'figcaption'
+    },
+    head: {
+      type: 'array',
+      default: [],
+      source: 'query',
+      selector: 'thead tr',
+      query: {
+        cells: {
+          type: 'array',
+          default: [],
+          source: 'query',
+          selector: 'td,th',
+          query: v4Query
+        }
+      }
+    },
+    body: {
+      type: 'array',
+      default: [],
+      source: 'query',
+      selector: 'tbody tr',
+      query: {
+        cells: {
+          type: 'array',
+          default: [],
+          source: 'query',
+          selector: 'td,th',
+          query: v4Query
+        }
+      }
+    },
+    foot: {
+      type: 'array',
+      default: [],
+      source: 'query',
+      selector: 'tfoot tr',
+      query: {
+        cells: {
+          type: 'array',
+          default: [],
+          source: 'query',
+          selector: 'td,th',
+          query: v4Query
+        }
+      }
+    }
+  },
+  supports: {
+    anchor: true,
+    align: true,
+    color: {
+      __experimentalSkipSerialization: true,
+      gradients: true,
+      __experimentalDefaultControls: {
+        background: true,
+        text: true
+      }
+    },
+    spacing: {
+      margin: true,
+      padding: true,
+      __experimentalDefaultControls: {
+        margin: false,
+        padding: false
+      }
+    },
+    typography: {
+      fontSize: true,
+      lineHeight: true,
+      __experimentalFontFamily: true,
+      __experimentalFontStyle: true,
+      __experimentalFontWeight: true,
+      __experimentalLetterSpacing: true,
+      __experimentalTextTransform: true,
+      __experimentalTextDecoration: true,
+      __experimentalDefaultControls: {
+        fontSize: true
+      }
+    },
+    __experimentalBorder: {
+      __experimentalSkipSerialization: true,
+      color: true,
+      style: true,
+      width: true,
+      __experimentalDefaultControls: {
+        color: true,
+        style: true,
+        width: true
+      }
+    },
+    __experimentalSelector: '.wp-block-table > table',
+    interactivity: {
+      clientNavigation: true
+    }
+  },
+  save({
+    attributes
+  }) {
+    const {
+      hasFixedLayout,
+      head,
+      body,
+      foot,
+      caption
+    } = attributes;
+    const isEmpty = !head.length && !body.length && !foot.length;
+    if (isEmpty) {
+      return null;
+    }
+    const colorProps = (0,external_wp_blockEditor_namespaceObject.__experimentalGetColorClassesAndStyles)(attributes);
+    const borderProps = (0,external_wp_blockEditor_namespaceObject.__experimentalGetBorderClassesAndStyles)(attributes);
+    const classes = classnames_default()(colorProps.className, borderProps.className, {
+      'has-fixed-layout': hasFixedLayout
+    });
+    const hasCaption = !external_wp_blockEditor_namespaceObject.RichText.isEmpty(caption);
+    const Section = ({
+      type,
+      rows
+    }) => {
+      if (!rows.length) {
+        return null;
+      }
+      const Tag = `t${type}`;
+      return (0,external_React_namespaceObject.createElement)(Tag, null, rows.map(({
+        cells
+      }, rowIndex) => (0,external_React_namespaceObject.createElement)("tr", {
+        key: rowIndex
+      }, cells.map(({
+        content,
+        tag,
+        scope,
+        align,
+        colspan,
+        rowspan
+      }, cellIndex) => {
+        const cellClasses = classnames_default()({
+          [`has-text-align-${align}`]: align
+        });
+        return (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText.Content, {
+          className: cellClasses ? cellClasses : undefined,
+          "data-align": align,
+          tagName: tag,
+          value: content,
+          key: cellIndex,
+          scope: tag === 'th' ? scope : undefined,
+          colSpan: colspan,
+          rowSpan: rowspan
+        });
+      }))));
+    };
+    return (0,external_React_namespaceObject.createElement)("figure", {
+      ...external_wp_blockEditor_namespaceObject.useBlockProps.save()
+    }, (0,external_React_namespaceObject.createElement)("table", {
+      className: classes === '' ? undefined : classes,
+      style: {
+        ...colorProps.style,
+        ...borderProps.style
+      }
+    }, (0,external_React_namespaceObject.createElement)(Section, {
+      type: "head",
+      rows: head
+    }), (0,external_React_namespaceObject.createElement)(Section, {
+      type: "body",
+      rows: body
+    }), (0,external_React_namespaceObject.createElement)(Section, {
+      type: "foot",
+      rows: foot
+    })), hasCaption && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RichText.Content, {
+      tagName: "figcaption",
+      value: caption,
+      className: (0,external_wp_blockEditor_namespaceObject.__experimentalGetElementClassName)('caption')
+    }));
+  }
+};
+
 // In #41140 support was added to global styles for caption elements which
 // added a `wp-element-caption` classname to the embed figcaption element.
+const v3Query = {
+  content: {
+    type: 'string',
+    source: 'html'
+  },
+  tag: {
+    type: 'string',
+    default: 'td',
+    source: 'tag'
+  },
+  scope: {
+    type: 'string',
+    source: 'attribute',
+    attribute: 'scope'
+  },
+  align: {
+    type: 'string',
+    source: 'attribute',
+    attribute: 'data-align'
+  }
+};
 const table_deprecated_v3 = {
   attributes: {
     hasFixedLayout: {
@@ -54304,27 +55056,7 @@ const table_deprecated_v3 = {
           default: [],
           source: 'query',
           selector: 'td,th',
-          query: {
-            content: {
-              type: 'string',
-              source: 'html'
-            },
-            tag: {
-              type: 'string',
-              default: 'td',
-              source: 'tag'
-            },
-            scope: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'scope'
-            },
-            align: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'data-align'
-            }
-          }
+          query: v3Query
         }
       }
     },
@@ -54339,27 +55071,7 @@ const table_deprecated_v3 = {
           default: [],
           source: 'query',
           selector: 'td,th',
-          query: {
-            content: {
-              type: 'string',
-              source: 'html'
-            },
-            tag: {
-              type: 'string',
-              default: 'td',
-              source: 'tag'
-            },
-            scope: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'scope'
-            },
-            align: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'data-align'
-            }
-          }
+          query: v3Query
         }
       }
     },
@@ -54374,27 +55086,7 @@ const table_deprecated_v3 = {
           default: [],
           source: 'query',
           selector: 'td,th',
-          query: {
-            content: {
-              type: 'string',
-              source: 'html'
-            },
-            tag: {
-              type: 'string',
-              default: 'td',
-              source: 'tag'
-            },
-            scope: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'scope'
-            },
-            align: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'data-align'
-            }
-          }
+          query: v3Query
         }
       }
     }
@@ -54516,6 +55208,27 @@ const table_deprecated_v3 = {
 };
 
 // Deprecation migrating table block to use colors block support feature.
+const v2Query = {
+  content: {
+    type: 'string',
+    source: 'html'
+  },
+  tag: {
+    type: 'string',
+    default: 'td',
+    source: 'tag'
+  },
+  scope: {
+    type: 'string',
+    source: 'attribute',
+    attribute: 'scope'
+  },
+  align: {
+    type: 'string',
+    source: 'attribute',
+    attribute: 'data-align'
+  }
+};
 const table_deprecated_v2 = {
   attributes: {
     hasFixedLayout: {
@@ -54542,27 +55255,7 @@ const table_deprecated_v2 = {
           default: [],
           source: 'query',
           selector: 'td,th',
-          query: {
-            content: {
-              type: 'string',
-              source: 'html'
-            },
-            tag: {
-              type: 'string',
-              default: 'td',
-              source: 'tag'
-            },
-            scope: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'scope'
-            },
-            align: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'data-align'
-            }
-          }
+          query: v2Query
         }
       }
     },
@@ -54577,27 +55270,7 @@ const table_deprecated_v2 = {
           default: [],
           source: 'query',
           selector: 'td,th',
-          query: {
-            content: {
-              type: 'string',
-              source: 'html'
-            },
-            tag: {
-              type: 'string',
-              default: 'td',
-              source: 'tag'
-            },
-            scope: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'scope'
-            },
-            align: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'data-align'
-            }
-          }
+          query: v2Query
         }
       }
     },
@@ -54612,27 +55285,7 @@ const table_deprecated_v2 = {
           default: [],
           source: 'query',
           selector: 'td,th',
-          query: {
-            content: {
-              type: 'string',
-              source: 'html'
-            },
-            tag: {
-              type: 'string',
-              default: 'td',
-              source: 'tag'
-            },
-            scope: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'scope'
-            },
-            align: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'data-align'
-            }
-          }
+          query: v2Query
         }
       }
     }
@@ -54729,6 +55382,22 @@ const table_deprecated_v2 = {
     };
   }
 };
+const v1Query = {
+  content: {
+    type: 'string',
+    source: 'html'
+  },
+  tag: {
+    type: 'string',
+    default: 'td',
+    source: 'tag'
+  },
+  scope: {
+    type: 'string',
+    source: 'attribute',
+    attribute: 'scope'
+  }
+};
 const table_deprecated_v1 = {
   attributes: {
     hasFixedLayout: {
@@ -54749,22 +55418,7 @@ const table_deprecated_v1 = {
           default: [],
           source: 'query',
           selector: 'td,th',
-          query: {
-            content: {
-              type: 'string',
-              source: 'html'
-            },
-            tag: {
-              type: 'string',
-              default: 'td',
-              source: 'tag'
-            },
-            scope: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'scope'
-            }
-          }
+          query: v1Query
         }
       }
     },
@@ -54779,22 +55433,7 @@ const table_deprecated_v1 = {
           default: [],
           source: 'query',
           selector: 'td,th',
-          query: {
-            content: {
-              type: 'string',
-              source: 'html'
-            },
-            tag: {
-              type: 'string',
-              default: 'td',
-              source: 'tag'
-            },
-            scope: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'scope'
-            }
-          }
+          query: v1Query
         }
       }
     },
@@ -54809,22 +55448,7 @@ const table_deprecated_v1 = {
           default: [],
           source: 'query',
           selector: 'td,th',
-          query: {
-            content: {
-              type: 'string',
-              source: 'html'
-            },
-            tag: {
-              type: 'string',
-              default: 'td',
-              source: 'tag'
-            },
-            scope: {
-              type: 'string',
-              source: 'attribute',
-              attribute: 'scope'
-            }
-          }
+          query: v1Query
         }
       }
     }
@@ -54897,7 +55521,7 @@ const table_deprecated_v1 = {
  *
  * See block-deprecation.md
  */
-/* harmony default export */ const table_deprecated = ([table_deprecated_v3, table_deprecated_v2, table_deprecated_v1]);
+/* harmony default export */ const table_deprecated = ([table_deprecated_v4, table_deprecated_v3, table_deprecated_v2, table_deprecated_v1]);
 
 ;// CONCATENATED MODULE: ./packages/icons/build-module/library/align-left.js
 
@@ -56025,7 +56649,7 @@ const table_metadata = {
   attributes: {
     hasFixedLayout: {
       type: "boolean",
-      "default": false
+      "default": true
     },
     caption: {
       type: "rich-text",
@@ -57757,12 +58381,36 @@ function TemplatePartPlaceholder({
   }));
 }
 
+;// CONCATENATED MODULE: ./packages/block-library/build-module/template-part/edit/utils/map-template-part-to-block-pattern.js
+/**
+ * WordPress dependencies
+ */
+
+
+/**
+ * Internal dependencies
+ */
+
+
+/**
+ * This maps the properties of a template part to those of a block pattern.
+ * @param {Object} templatePart
+ * @return {Object} The template part in the shape of block pattern.
+ */
+function mapTemplatePartToBlockPattern(templatePart) {
+  return {
+    name: createTemplatePartId(templatePart.theme, templatePart.slug),
+    title: templatePart.title.rendered,
+    blocks: (0,external_wp_blocks_namespaceObject.parse)(templatePart.content.raw),
+    templatePart
+  };
+}
+
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/template-part/edit/selection-modal.js
 
 /**
  * WordPress dependencies
  */
-
 
 
 
@@ -57788,14 +58436,10 @@ function TemplatePartSelectionModal({
   const {
     templateParts
   } = useAlternativeTemplateParts(area, templatePartId);
+
   // We can map template parts to block patters to reuse the BlockPatternsList UI
   const filteredTemplateParts = (0,external_wp_element_namespaceObject.useMemo)(() => {
-    const partsAsPatterns = templateParts.map(templatePart => ({
-      name: createTemplatePartId(templatePart.theme, templatePart.slug),
-      title: templatePart.title.rendered,
-      blocks: (0,external_wp_blocks_namespaceObject.parse)(templatePart.content.raw),
-      templatePart
-    }));
+    const partsAsPatterns = templateParts.map(templatePart => mapTemplatePartToBlockPattern(templatePart));
     return searchPatterns(partsAsPatterns, searchValue);
   }, [templateParts, searchValue]);
   const shownTemplateParts = (0,external_wp_compose_namespaceObject.useAsyncList)(filteredTemplateParts);
@@ -57803,7 +58447,6 @@ function TemplatePartSelectionModal({
   const filteredBlockPatterns = (0,external_wp_element_namespaceObject.useMemo)(() => {
     return searchPatterns(blockPatterns, searchValue);
   }, [blockPatterns, searchValue]);
-  const shownBlockPatterns = (0,external_wp_compose_namespaceObject.useAsyncList)(filteredBlockPatterns);
   const {
     createSuccessNotice
   } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_notices_namespaceObject.store);
@@ -57819,7 +58462,6 @@ function TemplatePartSelectionModal({
     });
     onClose();
   };
-  const createFromBlocks = useCreateTemplatePartFromBlocks(area, setAttributes);
   const hasTemplateParts = !!filteredTemplateParts.length;
   const hasBlockPatterns = !!filteredBlockPatterns.length;
   return (0,external_React_namespaceObject.createElement)("div", {
@@ -57837,13 +58479,6 @@ function TemplatePartSelectionModal({
     shownPatterns: shownTemplateParts,
     onClickPattern: pattern => {
       onTemplatePartSelect(pattern.templatePart);
-    }
-  })), hasBlockPatterns && (0,external_React_namespaceObject.createElement)("div", null, (0,external_React_namespaceObject.createElement)("h2", null, (0,external_wp_i18n_namespaceObject.__)('Patterns')), (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.__experimentalBlockPatternsList, {
-    blockPatterns: filteredBlockPatterns,
-    shownPatterns: shownBlockPatterns,
-    onClickPattern: (pattern, blocks) => {
-      createFromBlocks(blocks, pattern.title);
-      onClose();
     }
   })), !hasTemplateParts && !hasBlockPatterns && (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.__experimentalHStack, {
     alignment: "center"
@@ -58171,13 +58806,22 @@ function TemplatePartAdvancedControls({
 
 
 
-function TemplatePartInnerBlocks({
-  postId: id,
-  hasInnerBlocks,
-  layout,
-  tagName: TagName,
-  blockProps
-}) {
+
+
+function useRenderAppender(hasInnerBlocks) {
+  const blockEditingMode = (0,external_wp_blockEditor_namespaceObject.useBlockEditingMode)();
+  // Disable appending when the editing mode is 'contentOnly'. This is so that the user can't
+  // append into a template part when editing a page in the site editor. See
+  // DisableNonPageContentBlocks. Ideally instead of (mis)using editing mode there would be a
+  // block editor API for achieving this.
+  if (blockEditingMode === 'contentOnly') {
+    return false;
+  }
+  if (!hasInnerBlocks) {
+    return external_wp_blockEditor_namespaceObject.InnerBlocks.ButtonBlockAppender;
+  }
+}
+function useLayout(layout) {
   const themeSupportsLayout = (0,external_wp_data_namespaceObject.useSelect)(select => {
     const {
       getSettings
@@ -58185,7 +58829,65 @@ function TemplatePartInnerBlocks({
     return getSettings()?.supportsLayout;
   }, []);
   const [defaultLayout] = (0,external_wp_blockEditor_namespaceObject.useSettings)('layout');
-  const usedLayout = layout?.inherit ? defaultLayout || {} : layout;
+  if (themeSupportsLayout) {
+    return layout?.inherit ? defaultLayout || {} : layout;
+  }
+}
+function NonEditableTemplatePartPreview({
+  postId: id,
+  layout,
+  tagName: TagName,
+  blockProps
+}) {
+  (0,external_wp_blockEditor_namespaceObject.useBlockEditingMode)('disabled');
+  const {
+    content,
+    editedBlocks
+  } = (0,external_wp_data_namespaceObject.useSelect)(select => {
+    if (!id) {
+      return {};
+    }
+    const {
+      getEditedEntityRecord
+    } = select(external_wp_coreData_namespaceObject.store);
+    const editedRecord = getEditedEntityRecord('postType', 'wp_template_part', id, {
+      context: 'view'
+    });
+    return {
+      editedBlocks: editedRecord.blocks,
+      content: editedRecord.content
+    };
+  }, [id]);
+  const blocks = (0,external_wp_element_namespaceObject.useMemo)(() => {
+    if (!id) {
+      return undefined;
+    }
+    if (editedBlocks) {
+      return editedBlocks;
+    }
+    if (!content || typeof content !== 'string') {
+      return [];
+    }
+    return (0,external_wp_blocks_namespaceObject.parse)(content);
+  }, [id, editedBlocks, content]);
+  const innerBlocksProps = (0,external_wp_blockEditor_namespaceObject.useInnerBlocksProps)(blockProps, {
+    value: blocks,
+    onInput: () => {},
+    onChange: () => {},
+    renderAppender: false,
+    layout: useLayout(layout)
+  });
+  return (0,external_React_namespaceObject.createElement)(TagName, {
+    ...innerBlocksProps
+  });
+}
+function EditableTemplatePartInnerBlocks({
+  postId: id,
+  hasInnerBlocks,
+  layout,
+  tagName: TagName,
+  blockProps
+}) {
   const [blocks, onInput, onChange] = (0,external_wp_coreData_namespaceObject.useEntityBlockEditor)('postType', 'wp_template_part', {
     id
   });
@@ -58193,11 +58895,40 @@ function TemplatePartInnerBlocks({
     value: blocks,
     onInput,
     onChange,
-    renderAppender: hasInnerBlocks ? undefined : external_wp_blockEditor_namespaceObject.InnerBlocks.ButtonBlockAppender,
-    layout: themeSupportsLayout ? usedLayout : undefined
+    renderAppender: useRenderAppender(hasInnerBlocks),
+    layout: useLayout(layout)
   });
   return (0,external_React_namespaceObject.createElement)(TagName, {
     ...innerBlocksProps
+  });
+}
+function TemplatePartInnerBlocks({
+  postId: id,
+  hasInnerBlocks,
+  layout,
+  tagName: TagName,
+  blockProps
+}) {
+  const {
+    canViewTemplatePart,
+    canEditTemplatePart
+  } = (0,external_wp_data_namespaceObject.useSelect)(select => {
+    var _select$canUser, _select$canUser2;
+    return {
+      canViewTemplatePart: (_select$canUser = select(external_wp_coreData_namespaceObject.store).canUser('read', 'templates')) !== null && _select$canUser !== void 0 ? _select$canUser : false,
+      canEditTemplatePart: (_select$canUser2 = select(external_wp_coreData_namespaceObject.store).canUser('create', 'templates')) !== null && _select$canUser2 !== void 0 ? _select$canUser2 : false
+    };
+  }, []);
+  if (!canViewTemplatePart) {
+    return null;
+  }
+  const TemplatePartInnerBlocksComponent = canEditTemplatePart ? EditableTemplatePartInnerBlocks : NonEditableTemplatePartPreview;
+  return (0,external_React_namespaceObject.createElement)(TemplatePartInnerBlocksComponent, {
+    postId: id,
+    hasInnerBlocks: hasInnerBlocks,
+    layout: layout,
+    tagName: TagName,
+    blockProps: blockProps
   });
 }
 
@@ -58206,6 +58937,9 @@ function TemplatePartInnerBlocks({
 /**
  * WordPress dependencies
  */
+
+
+
 
 
 
@@ -58225,16 +58959,16 @@ function TemplatePartInnerBlocks({
 function ReplaceButton({
   isEntityAvailable,
   area,
-  clientId,
   templatePartId,
   isTemplatePartSelectionOpen,
   setIsTemplatePartSelectionOpen
 }) {
+  // This hook fetches patterns, so don't run it unconditionally in the main
+  // edit function!
   const {
     templateParts
   } = useAlternativeTemplateParts(area, templatePartId);
-  const blockPatterns = useAlternativeBlockPatterns(area, clientId);
-  const hasReplacements = !!templateParts.length || !!blockPatterns.length;
+  const hasReplacements = !!templateParts.length;
   const canReplace = isEntityAvailable && hasReplacements && (area === 'header' || area === 'footer');
   if (!canReplace) {
     return null;
@@ -58247,11 +58981,41 @@ function ReplaceButton({
     "aria-haspopup": "dialog"
   }, (0,external_wp_i18n_namespaceObject.__)('Replace'));
 }
+function TemplatesList({
+  area,
+  clientId,
+  isEntityAvailable,
+  onSelect
+}) {
+  // This hook fetches patterns, so don't run it unconditionally in the main
+  // edit function!
+  const blockPatterns = useAlternativeBlockPatterns(area, clientId);
+  const canReplace = isEntityAvailable && !!blockPatterns.length && (area === 'header' || area === 'footer');
+  const shownTemplates = (0,external_wp_compose_namespaceObject.useAsyncList)(blockPatterns);
+  if (!canReplace) {
+    return null;
+  }
+  return (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.PanelBody, {
+    title: (0,external_wp_i18n_namespaceObject.__)('Design')
+  }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.__experimentalBlockPatternsList, {
+    label: (0,external_wp_i18n_namespaceObject.__)('Templates'),
+    blockPatterns: blockPatterns,
+    shownPatterns: shownTemplates,
+    onClickPattern: onSelect,
+    showTitle: false
+  }));
+}
 function TemplatePartEdit({
   attributes,
   setAttributes,
   clientId
 }) {
+  const {
+    createSuccessNotice
+  } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_notices_namespaceObject.store);
+  const {
+    editEntityRecord
+  } = (0,external_wp_data_namespaceObject.useDispatch)(external_wp_coreData_namespaceObject.store);
   const currentTheme = (0,external_wp_data_namespaceObject.useSelect)(select => select(external_wp_coreData_namespaceObject.store).getCurrentTheme()?.stylesheet, []);
   const {
     slug,
@@ -58266,14 +59030,17 @@ function TemplatePartEdit({
     isResolved,
     hasInnerBlocks,
     isMissing,
-    area
+    area,
+    onNavigateToEntityRecord,
+    title
   } = (0,external_wp_data_namespaceObject.useSelect)(select => {
     const {
       getEditedEntityRecord,
       hasFinishedResolution
     } = select(external_wp_coreData_namespaceObject.store);
     const {
-      getBlockCount
+      getBlockCount,
+      getSettings
     } = select(external_wp_blockEditor_namespaceObject.store);
     const getEntityArgs = ['postType', 'wp_template_part', templatePartId];
     const entityRecord = templatePartId ? getEditedEntityRecord(...getEntityArgs) : null;
@@ -58283,7 +59050,9 @@ function TemplatePartEdit({
       hasInnerBlocks: getBlockCount(clientId) > 0,
       isResolved: hasResolvedEntity,
       isMissing: hasResolvedEntity && (!entityRecord || Object.keys(entityRecord).length === 0),
-      area: _area
+      area: _area,
+      onNavigateToEntityRecord: getSettings().onNavigateToEntityRecord,
+      title: entityRecord?.title
     };
   }, [templatePartId, attributes.area, clientId]);
   const areaObject = useTemplatePartArea(area);
@@ -58291,6 +59060,16 @@ function TemplatePartEdit({
   const isPlaceholder = !slug;
   const isEntityAvailable = !isPlaceholder && !isMissing && isResolved;
   const TagName = tagName || areaObject.tagName;
+  const onPatternSelect = async pattern => {
+    await editEntityRecord('postType', 'wp_template_part', templatePartId, {
+      blocks: pattern.blocks,
+      content: (0,external_wp_blocks_namespaceObject.serialize)(pattern.blocks)
+    });
+    createSuccessNotice((0,external_wp_i18n_namespaceObject.sprintf)( /* translators: %s: template part title. */
+    (0,external_wp_i18n_namespaceObject.__)('Template Part "%s" updated.'), title || slug), {
+      type: 'snackbar'
+    });
+  };
 
   // We don't want to render a missing state if we have any inner blocks.
   // A new template part is automatically created if we have any inner blocks but no entity.
@@ -58307,7 +59086,14 @@ function TemplatePartEdit({
   }
   return (0,external_React_namespaceObject.createElement)(external_React_namespaceObject.Fragment, null, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.RecursionProvider, {
     uniqueId: templatePartId
-  }, (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, {
+  }, isEntityAvailable && onNavigateToEntityRecord && (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.BlockControls, {
+    group: "other"
+  }, (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.ToolbarButton, {
+    onClick: () => onNavigateToEntityRecord({
+      postId: templatePartId,
+      postType: 'wp_template_part'
+    })
+  }, (0,external_wp_i18n_namespaceObject.__)('Edit'))), (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, {
     group: "advanced"
   }, (0,external_React_namespaceObject.createElement)(TemplatePartAdvancedControls, {
     tagName: tagName,
@@ -58340,7 +59126,12 @@ function TemplatePartEdit({
       isTemplatePartSelectionOpen,
       setIsTemplatePartSelectionOpen
     });
-  }), isEntityAvailable && (0,external_React_namespaceObject.createElement)(TemplatePartInnerBlocks, {
+  }), (0,external_React_namespaceObject.createElement)(external_wp_blockEditor_namespaceObject.InspectorControls, null, (0,external_React_namespaceObject.createElement)(TemplatesList, {
+    area: area,
+    clientId: clientId,
+    isEntityAvailable: isEntityAvailable,
+    onSelect: pattern => onPatternSelect(pattern)
+  })), isEntityAvailable && (0,external_React_namespaceObject.createElement)(TemplatePartInnerBlocks, {
     tagName: TagName,
     blockProps: blockProps,
     postId: templatePartId,
@@ -58898,20 +59689,6 @@ const text_columns_init = () => initBlock({
   metadata: text_columns_metadata,
   settings: text_columns_settings
 });
-
-;// CONCATENATED MODULE: ./packages/icons/build-module/library/verse.js
-
-/**
- * WordPress dependencies
- */
-
-const verse = (0,external_React_namespaceObject.createElement)(external_wp_primitives_namespaceObject.SVG, {
-  viewBox: "0 0 24 24",
-  xmlns: "http://www.w3.org/2000/svg"
-}, (0,external_React_namespaceObject.createElement)(external_wp_primitives_namespaceObject.Path, {
-  d: "M17.8 2l-.9.3c-.1 0-3.6 1-5.2 2.1C10 5.5 9.3 6.5 8.9 7.1c-.6.9-1.7 4.7-1.7 6.3l-.9 2.3c-.2.4 0 .8.4 1 .1 0 .2.1.3.1.3 0 .6-.2.7-.5l.6-1.5c.3 0 .7-.1 1.2-.2.7-.1 1.4-.3 2.2-.5.8-.2 1.6-.5 2.4-.8.7-.3 1.4-.7 1.9-1.2s.8-1.2 1-1.9c.2-.7.3-1.6.4-2.4.1-.8.1-1.7.2-2.5 0-.8.1-1.5.2-2.1V2zm-1.9 5.6c-.1.8-.2 1.5-.3 2.1-.2.6-.4 1-.6 1.3-.3.3-.8.6-1.4.9-.7.3-1.4.5-2.2.8-.6.2-1.3.3-1.8.4L15 7.5c.3-.3.6-.7 1-1.1 0 .4 0 .8-.1 1.2zM6 20h8v-1.5H6V20z"
-}));
-/* harmony default export */ const library_verse = (verse);
 
 ;// CONCATENATED MODULE: ./packages/block-library/build-module/verse/deprecated.js
 
@@ -59791,6 +60568,7 @@ function TracksEditor({
 
 
 
+
 // Much of this description is duplicated from MediaPlaceholder.
 const video_edit_placeholder = content => {
   return (0,external_React_namespaceObject.createElement)(external_wp_components_namespaceObject.Placeholder, {
@@ -59822,22 +60600,12 @@ function VideoEdit({
     tracks
   } = attributes;
   const isTemporaryVideo = !id && (0,external_wp_blob_namespaceObject.isBlobURL)(src);
-  const {
-    getSettings
-  } = (0,external_wp_data_namespaceObject.useSelect)(external_wp_blockEditor_namespaceObject.store);
-  (0,external_wp_element_namespaceObject.useEffect)(() => {
-    if (!id && (0,external_wp_blob_namespaceObject.isBlobURL)(src)) {
-      const file = (0,external_wp_blob_namespaceObject.getBlobByURL)(src);
-      if (file) {
-        getSettings().mediaUpload({
-          filesList: [file],
-          onFileChange: ([media]) => onSelectVideo(media),
-          onError: onUploadError,
-          allowedTypes: video_edit_ALLOWED_MEDIA_TYPES
-        });
-      }
-    }
-  }, []);
+  useUploadMediaFromBlobURL({
+    url: src,
+    allowedTypes: video_edit_ALLOWED_MEDIA_TYPES,
+    onChange: onSelectVideo,
+    onError: onUploadError
+  });
   (0,external_wp_element_namespaceObject.useEffect)(() => {
     // Placeholder may be rendered.
     if (videoPlayer.current) {
